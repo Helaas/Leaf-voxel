@@ -1,4 +1,30 @@
-# MLP1 performance — Leaf Voxel 0.1.0
+# MLP1 performance — Leaf Voxel
+
+## 0.2.0 battle and scene-change checks
+
+Test date: 2026-09-06, same hardware/runtime and isolated data setup described below. Both tests run for 120 seconds at RES 1/3 with the 60 FPS cap, using `scripts/benchmark-scenes.lua`. The scene-change test holds a fixed view after each warp; it is not the moving route used for 0.1.0. GPU frequency varied with the existing governor (300–800 MHz observed); clocks and swap configuration were not changed.
+
+| Door transition | Total time, including fades | Destination mesh ready at reveal |
+| --- | ---: | --- |
+| First entry to Viridian Forest | 2.635 s | Yes |
+| Return to bedroom | 0.712 s | Yes |
+| Return to forest | 0.700 s | Yes |
+| First entry to Celadon City | 4.052 s | Yes |
+| Return to forest from Celadon | 0.713 s | Yes |
+
+The fade holds the main mesh build behind a solid veil, verified with a KMS capture. One departed map is retained within a 12 MiB vertex-buffer limit; this excludes its analysis data, shared models and LÖVE's CPU copy, so it is not a total RAM cap. The transition run peaked at **240.5 MiB RSS** across 58 samples. No process swap or system paging occurred. Connected neighbours still build after the main map is revealed; cold neighbour pop-in remains possible. Startup and failed mesh builds retain the 2D fallback. The added hold times out after four seconds to avoid getting stuck.
+
+The battle test creates a level-30 Blastoise and level-40 Snorlax **in memory only**, uses Surf and Bubblebeam, switches between classic and wide layouts, switches LIGHT → CLASSIC → LIGHT, and escapes back to the forest. Native uipad A/B also opened and cancelled the move menu. The completed battle is explicitly logged as `LEAF_BATTLE_END result=run`.
+
+Settled LIGHT battle windows ran at **59.84–60.05 FPS**, with window p95 at most **18.06 ms**, excluding the initial battle load and the two first-use move windows. Those move windows dipped to **45.68 FPS** (Surf, worst frame 713.48 ms) and **55.27 FPS** (Bubblebeam, worst frame 409.52 ms). The battle load window was 54.93 FPS with a 282.81 ms worst frame. Thus the cached stage is inexpensive during steady play, but this build does not eliminate cold effect hitches. The battle run peaked at **135.7 MiB RSS** across 58 samples, with no process swap or system paging. The in-run CLASSIC windows were also approximately 60 FPS; this is not a matched cold-effects comparison.
+
+Evidence: [battle frames](evidence/battle-0.2.0.log), [battle device samples](evidence/battle-0.2.0-device.log), [transition timings](evidence/transitions-0.2.0.log), [transition device samples](evidence/transitions-0.2.0-device.log), [covered warp](evidence/mlp1-covered-warp.png). A separate short stationary run checked the final battle colours and menu redraws. Nine local tests pass, including cache retention/eviction and fade release on readiness, failure, disable and timeout; LuaJIT syntax checks pass.
+
+![Light battle stage on MLP1](evidence/mlp1-battle-light.png)
+
+These are short Red-engine checks, not a full playthrough or validation of every move, palette, generation, mod combination and display setting.
+
+## 0.1.0 overworld baseline
 
 Test date: 2026-09-06. Experimental overworld renderer, based on Dramaless Shape commit `97ca3e1` (2.0.4).
 
@@ -45,7 +71,7 @@ The separate [Leaf-Gen1Recomp hardware report](https://github.com/Helaas/Leaf-Ge
 
 ## Normal controller smoke test
 
-The game was also launched without `POKEPORT_DRIVER`, using the isolated data root. The existing uipad navigated the title menu, selected Continue, accepted the expected mod-change notice reached the voxel bedroom, moved with the D-pad and opened the full-resolution Start menu. This checks the normal frame loop and controller path separately from scripted throughput.
+The game was also launched without `POKEPORT_DRIVER`, using the isolated data root. The existing uipad navigated the title menu, selected Continue, accepted the expected mod-change notice, reached the voxel bedroom, moved with the D-pad and opened the full-resolution Start menu. This checks the normal frame loop and controller path separately from scripted throughput.
 
 ## Limits
 

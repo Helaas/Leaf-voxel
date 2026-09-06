@@ -1,0 +1,46 @@
+[leaf-sdl2-fullscreen] loaded enabled=1 target=960x720
+[leaf-sdl2-fullscreen] SDL_CreateWindow requested=1024x768 flags=0x22 forcing=960x720 flags=0x1023
+xkbcommon: ERROR: couldn't find a Compose file for locale "en_US.UTF-8" (mapped to "en_US.UTF-8")
+[leaf-sdl2-fullscreen] SDL_SetWindowPosition ignoring=805240832,805240832
+[leaf-sdl2-fullscreen] SDL_SetWindowFullscreen forcing flags=0x1001
+arm_release_ver: g13p0-01eac0, rk_so_ver: 10
+[info] generated data loaded (222 maps, 151 species, 165 moves)
+[info] loaded mod LEAF_VOXEL 0.2.0
+[info] game loaded
+[info] display: 960x720 units, 960x720 px, fit scale 5 px/GB px
+[info] loaded save
+[leaf-sdl2-fullscreen] SDL_SetWindowFullscreen forcing flags=0x1001
+[info] map: REDS_HOUSE_2F at (3,6)
+LEAF_SCENE t=5.02 fps=53.83 p95=18.24 max=327.17 lua_mb=17.2 map=REDS_HOUSE_2F pending=0 phase=world layout=og mode=light
+[info] map: VIRIDIAN_FOREST at (8,10)
+LEAF_SCENE t=10.03 fps=57.62 p95=19.03 max=97.87 lua_mb=22.6 map=VIRIDIAN_FOREST pending=1 phase=warp layout=og mode=light
+LEAF_WARP map=VIRIDIAN_FOREST seconds=2.635 ready=true
+LEAF_SCENE t=15.03 fps=54.60 p95=26.00 max=71.45 lua_mb=19.6 map=VIRIDIAN_FOREST pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=20.04 fps=57.70 p95=24.61 max=26.57 lua_mb=23.0 map=VIRIDIAN_FOREST pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=25.04 fps=57.38 p95=22.63 max=26.96 lua_mb=19.1 map=VIRIDIAN_FOREST pending=0 phase=warp layout=og mode=light
+[info] map: REDS_HOUSE_2F at (3,6)
+LEAF_WARP map=REDS_HOUSE_2F seconds=0.712 ready=true
+LEAF_SCENE t=30.05 fps=59.49 p95=18.49 max=26.46 lua_mb=19.6 map=REDS_HOUSE_2F pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=35.06 fps=59.85 p95=18.04 max=44.46 lua_mb=19.9 map=REDS_HOUSE_2F pending=0 phase=warp layout=og mode=light
+[info] map: VIRIDIAN_FOREST at (8,10)
+LEAF_WARP map=VIRIDIAN_FOREST seconds=0.700 ready=true
+LEAF_SCENE t=40.07 fps=57.16 p95=24.76 max=26.26 lua_mb=23.0 map=VIRIDIAN_FOREST pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=45.09 fps=56.39 p95=25.25 max=46.59 lua_mb=19.0 map=VIRIDIAN_FOREST pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=50.10 fps=57.07 p95=25.05 max=27.31 lua_mb=22.4 map=VIRIDIAN_FOREST pending=0 phase=warp layout=og mode=light
+[info] map: CELADON_CITY at (8,10)
+LEAF_WARP map=CELADON_CITY seconds=4.052 ready=true
+LEAF_SCENE t=55.12 fps=50.14 p95=30.12 max=107.58 lua_mb=47.7 map=CELADON_CITY pending=4 phase=world layout=og mode=light
+LEAF_SCENE t=60.14 fps=50.44 p95=26.20 max=55.04 lua_mb=64.2 map=CELADON_CITY pending=2 phase=world layout=og mode=light
+LEAF_SCENE t=65.15 fps=49.70 p95=26.51 max=46.63 lua_mb=70.4 map=CELADON_CITY pending=1 phase=world layout=og mode=light
+LEAF_SCENE t=70.16 fps=50.69 p95=25.21 max=66.03 lua_mb=84.2 map=CELADON_CITY pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=75.17 fps=60.03 p95=18.15 max=20.47 lua_mb=96.7 map=CELADON_CITY pending=0 phase=warp layout=og mode=light
+[info] map: VIRIDIAN_FOREST at (8,10)
+LEAF_WARP map=VIRIDIAN_FOREST seconds=0.713 ready=true
+LEAF_SCENE t=80.18 fps=55.58 p95=25.00 max=31.10 lua_mb=74.1 map=VIRIDIAN_FOREST pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=85.19 fps=56.49 p95=25.02 max=50.61 lua_mb=84.5 map=VIRIDIAN_FOREST pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=90.20 fps=55.62 p95=23.49 max=27.34 lua_mb=40.3 map=VIRIDIAN_FOREST pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=95.21 fps=56.88 p95=25.14 max=26.49 lua_mb=50.9 map=VIRIDIAN_FOREST pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=100.22 fps=56.07 p95=24.96 max=30.70 lua_mb=42.9 map=VIRIDIAN_FOREST pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=105.23 fps=56.32 p95=25.24 max=29.63 lua_mb=36.6 map=VIRIDIAN_FOREST pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=110.24 fps=57.06 p95=25.11 max=26.93 lua_mb=47.2 map=VIRIDIAN_FOREST pending=0 phase=world layout=og mode=light
+LEAF_SCENE t=115.26 fps=56.83 p95=23.92 max=26.60 lua_mb=41.0 map=VIRIDIAN_FOREST pending=0 phase=world layout=og mode=light

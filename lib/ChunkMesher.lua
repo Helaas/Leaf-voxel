@@ -1007,7 +1007,7 @@ function ChunkMesher.pair(map, bodyOnly)
   local c = cache[map.id]
   if not c then return nil, nil end
   local slot = bodyOnly and "body" or "full"
-  return c[slot] or nil, c[waterSlot(slot)] or nil
+  return c[slot] or nil, c[waterSlot(slot)] or nil, c[slot .. "Trees"]
 end
 
 function ChunkMesher.trees(map, bodyOnly)
@@ -1061,15 +1061,27 @@ function ChunkMesher.refresh(mapId)
               body = (c.body ~= nil) or nil }
 end
 
--- Evict everything outside `live` (a set of map ids): far maps' meshes
--- are released -- GPU buffer and LOVE's CPU copy both -- and their
--- Structures analysis dropped. The live set is the current map plus its
--- rendered neighbours, so memory stays bounded by what is on or near the
--- screen instead of growing with every area ever visited.
---
-function ChunkMesher.setLive(live)
+-- Keep the visible neighbourhood and at most one small previous map.
+-- Eviction releases both mesh buffers and their Structures analysis.
+function ChunkMesher.setLive(live, previousId)
+  local retained = {}
+  for id in pairs(live) do retained[id] = true end
+  -- Keep at most one departed map, capped at 12 MiB of vertex data
+  -- (LOVE also keeps a CPU copy). Do not keep building departed maps.
+  local previous = previousId and cache[previousId]
+  if previous and not live[previousId] then
+    local bytes = 0
+    for _, slot in ipairs({"full", "body", "fullWater", "bodyWater", "grass", "flowers"}) do
+      local mesh = previous[slot]
+      if mesh then bytes = bytes + mesh:getVertexCount() * 24 end
+    end
+    for _, figure in ipairs(type(previous.figures) == "table" and previous.figures or {}) do
+      bytes = bytes + figure.mesh:getVertexCount() * 24
+    end
+    if bytes <= 12 * 1024 * 1024 then retained[previousId] = true end
+  end
   for id, c in pairs(cache) do
-    if not live[id] then
+    if not retained[id] then
       releaseEntry(c)
       cache[id] = nil
       gen[id] = (gen[id] or 0) + 1
@@ -1083,6 +1095,7 @@ function ChunkMesher.setLive(live)
       table.remove(jobs, i)
     end
   end
+  return retained
 end
 
 -- Drop one map's mesh (Cut swapped a block) or all of them (hot reload).

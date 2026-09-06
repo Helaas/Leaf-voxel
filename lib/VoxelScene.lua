@@ -481,7 +481,8 @@ end
 -- update + render). Keep stable masks/live metadata and reuse the output arrays.
 local neighborhood = { map = nil, count = 0, rows = {} }
 local cachedMasks = {}
-local nbMeshBuf, nbWaterBuf = {}, {}
+local nbMeshBuf, nbWaterBuf, nbTreeBuf = {}, {}, {}
+local currentTrees, previousMapId
 
 local function neighborhoodChanged(state)
   local nbs = state.neighbors or {}
@@ -504,6 +505,9 @@ local function rebuildNeighborhood(state)
   local live = { [state.map.id] = true }
   local masks = {}
 
+  if neighborhood.map and neighborhood.map.id ~= state.map.id then
+    previousMapId = neighborhood.map.id
+  end
   neighborhood.map = state.map
   neighborhood.count = #nbs
 
@@ -524,8 +528,7 @@ local function rebuildNeighborhood(state)
   for i = #nbs + 1, #neighborhood.rows do neighborhood.rows[i] = nil end
 
   cachedMasks = masks
-  ChunkMesher.setLive(live)
-  TerrainAtlas.setLive(live)
+  TerrainAtlas.setLive(ChunkMesher.setLive(live, previousMapId))
 end
 
 -- Request everything `state`'s frame wants and evict what it no longer
@@ -559,20 +562,21 @@ function VoxelScene.prefetch(state)
   -- always come from the same slot and a lake is never drawn twice or left
   -- as a hole.
   ChunkMesher.request(state.map, false, cachedMasks, true)
-  local terrain, water = ChunkMesher.pair(state.map, false)
+  local terrain, water
+  terrain, water, currentTrees = ChunkMesher.pair(state.map, false)
   if not terrain then
-    terrain, water = ChunkMesher.pair(state.map, true)
+    terrain, water, currentTrees = ChunkMesher.pair(state.map, true)
   end
   local nbs = state.neighbors or {}
   for i, nb in ipairs(nbs) do
     ChunkMesher.request(nb.map, true)
-    nbMeshBuf[i], nbWaterBuf[i] = ChunkMesher.pair(nb.map, true)
+    nbMeshBuf[i], nbWaterBuf[i], nbTreeBuf[i] = ChunkMesher.pair(nb.map, true)
     if not nbMeshBuf[i] then
-      nbMeshBuf[i], nbWaterBuf[i] = ChunkMesher.pair(nb.map, false)
+      nbMeshBuf[i], nbWaterBuf[i], nbTreeBuf[i] = ChunkMesher.pair(nb.map, false)
     end
   end
   for i = #nbs + 1, #nbMeshBuf do
-    nbMeshBuf[i], nbWaterBuf[i] = nil, nil
+    nbMeshBuf[i], nbWaterBuf[i], nbTreeBuf[i] = nil, nil, nil
   end
   Voxel.ready = terrain ~= nil
   return terrain, nbMeshBuf, water, nbWaterBuf
@@ -1005,11 +1009,8 @@ end
 
 function VoxelScene.render(state, w, h, vw, vh, paletteFor)
   lastPaletteFor = paletteFor
-  -- With nothing cached at all (the first frame of a fresh toggle), return
-  -- nil and let the pipeline choose its cold-build veil.  A settled failure
-  -- still falls back to the engine's 2D path; an in-flight healthy build stays
-  -- black so flat tiles are never exposed immediately before the voxels land.
-  -- Voxel.ready also holds the camera tween at flat until terrain exists.
+  -- Warps cover cold builds through SceneTransitions. Startup and failed
+  -- builds retain the engine's 2D fallback until terrain is available.
   local terrain, nbMesh, water, nbWater = VoxelScene.prefetch(state)
   if not terrain then return nil end
 
@@ -1126,9 +1127,9 @@ function VoxelScene.render(state, w, h, vw, vh, paletteFor)
     pcall(companion.dispatchRenderPhase, companion, "background")
   end
   Voxel3D.draw3DTerrain(terrain, atlasFor(state.map), state.neighbors, nbMesh, withinRenderDistance)
-  Trees.draw(ChunkMesher.trees(state.map, false), atlasFor(state.map))
-  for _, nb in ipairs(state.neighbors or {}) do
-    Trees.draw(ChunkMesher.trees(nb.map, true), atlasFor(nb.map), nb.ox, nb.oy)
+  Trees.draw(currentTrees, atlasFor(state.map))
+  for i, nb in ipairs(state.neighbors or {}) do
+    Trees.draw(nbTreeBuf[i], atlasFor(nb.map), nb.ox, nb.oy)
   end
 
   -- Without a shadow map (headless, or a driver that could not make the

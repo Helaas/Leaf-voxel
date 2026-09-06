@@ -59,6 +59,7 @@ function Trees.visible(tree, ox, oz)
 end
 
 function Trees.draw(list, atlas, ox, oz)
+  if not list then return end
   for _, tree in ipairs(list) do
     if tree.model.mesh and Trees.visible(tree,ox,oz) then
       Voxel3D.draw(tree.model.mesh,atlas,Mat4.translate(tree.x+(ox or 0),0,tree.z+(oz or 0)))

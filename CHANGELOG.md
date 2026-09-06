@@ -1,5 +1,18 @@
 # Changelog
 
+## Leaf Voxel 0.2.0 — 2026-09-06
+
+- Added a cached, shallow battle stage with original Pokémon sprites, menus and move effects; LIGHT/CLASSIC option, classic and wide layouts.
+- Door fades cover destination mesh building, with a bounded wait and short fade-in.
+- Retain one previous map within a 12 MiB vertex-buffer limit to speed up returns.
+- Keep trees and terrain together when falling back between full and body-only map meshes.
+
+## Leaf Voxel 0.1.0 — 2026-09-06
+
+- Initial MLP1 fork: reduced rendering resolution, simple shader and buildings, packed mesh uploads, flat grass, rounded trees with shared meshes and frustum culling.
+
+The entries below are the inherited Dramaless Shape history.
+
 ## 2.0.4
 
 - Contribution by Bo:

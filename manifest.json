@@ -1,7 +1,7 @@
 {
   "id": "LEAF_VOXEL",
   "name": "Leaf Voxel",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "api": 2,
   "entry": "main.lua",
   "profile": "content",
@@ -22,6 +22,6 @@
   ],
   "affects_link": false,
   "experimental": true,
-  "description": "Lightweight voxel overworld for the Miniloong Pocket 1. Battles use the original 2D renderer.",
+  "description": "Lightweight voxel world and battle stage for the Miniloong Pocket 1, with bounded scene caching and covered door loads.",
   "github": "Helaas/Leaf-voxel"
 }

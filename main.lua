@@ -1,6 +1,6 @@
--- Leaf Voxel: a small overworld-only renderer for the MLP1.
+-- Leaf Voxel: a small world and battle renderer for the MLP1.
 local mod = ...
-mod.exports.version = "0.1.0"
+mod.exports.version = "0.2.0"
 
 local V = { mod = mod, path = mod.path }
 local modules, dataFiles = {}, {}
@@ -32,6 +32,8 @@ local Voxel3D = V.require("Voxel3D")
 local Scene = V.require("VoxelScene")
 local Mesher = V.require("ChunkMesher")
 local Quality = V.require("Quality")
+local Battle = V.require("LightBattle")
+V.require("SceneTransitions")
 local Pipelines = require("src.render.Pipelines")
 
 local voidFill
@@ -66,20 +68,29 @@ mod.content.render_pipelines:register("voxel", {
     Quality.invalidate()
     Voxel3D.invalidate()
     Mesher.invalidate()
+    Battle.invalidate()
   end,
 })
 
-mod.options:define({ Quality.setting:schema("Resolution of the voxel world; menus stay sharp.") })
+mod.options:define({
+  Quality.setting:schema("Resolution of the voxel world; menus stay sharp."),
+  Battle.setting:schema("Lightweight stage with original battle sprites and effects, or the classic field."),
+})
 mod.hooks:wrap("ui.options.rows", function(next, game, rows)
   local out = next(game, rows)
   out[#out + 1] = Quality.setting:row()
+  out[#out + 1] = Battle.setting:row()
   return out
 end)
 mod.events:on("mod.options_changed", function(payload)
   if payload and payload.mod == mod.id and payload.key == Quality.setting.key then
     Quality.setting:sync(payload.value)
   end
+  if payload and payload.mod == mod.id and payload.key == Battle.setting.key then
+    Battle.setting:sync(payload.value)
+  end
 end)
+mod.events:on("battle.ended", Battle.invalidate)
 
 local function restore(payload)
   local save = payload and payload.save

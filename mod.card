@@ -1,5 +1,5 @@
 return {
-  summary = "A lightweight voxel overworld for the Miniloong Pocket 1.",
+  summary = "A lightweight voxel world and battle stage for the Miniloong Pocket 1.",
   author = "Helaas; based on Dramaless Shape by Stahltier and contributors",
   contact = "https://github.com/Helaas/Leaf-voxel",
   tags = { "graphics", "3d", "voxel" },
