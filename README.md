@@ -18,6 +18,8 @@ Mesh uploads use LÖVE's packed data API because Gen1Recomp's mod sandbox does n
 
 Requires Gen1Recomp with mod API 2 and LÖVE 11.5. Tested engine: **0.2.56**, using [Leaf-Gen1Recomp](https://github.com/Helaas/Leaf-Gen1Recomp) and Leaf's PortMaster runtime.
 
+The [Leaf-Gen1Recomp release](https://github.com/Helaas/Leaf-Gen1Recomp/releases) already bundles this mod and enables it on first launch, so installing that port is enough. [INSTALL.md](INSTALL.md) covers installing into an existing profile, checking it took, and the engine settings worth matching (with a script that applies them).
+
 1. Build with `python3 scripts/package.py`, or use a provided ZIP.
 2. Import the ZIP through Gen1Recomp's mod manager, or extract its `LEAF_VOXEL` folder into the game's user-data `mods` directory.
 3. Disable other voxel renderers and enable **Leaf Voxel** for your cartridge.
