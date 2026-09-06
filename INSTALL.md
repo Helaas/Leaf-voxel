@@ -1,7 +1,7 @@
 # Installing Leaf Voxel
 
-Current package: `leaf-voxel-0.2.1.zip` — 37 files, 326,472 bytes,
-SHA-256 `6f85c9493d6706de5f5bc6ae77e5df2cb5f2c90049cdc5da9579fbd459f68502`.
+Current package: `leaf-voxel-0.2.1.zip` — 37 files, 326,612 bytes,
+SHA-256 `c541a8cc0923ea4cf341fef496b9efc6f5ac9346ab3954e62aafb36b23b7c31d`.
 Build it with `python3 scripts/package.py`, and verify a copy with:
 
 ```sh
