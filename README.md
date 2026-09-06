@@ -8,6 +8,8 @@ Trees and stumps keep their rounded forms, using shared meshes and screen cullin
 
 **LIGHT battles** use a static, shallow stage rendered once and cached. Pokémon stay at the engine's normal battle anchors, preserving native sprite animation and move effects. Classic and wide layouts are supported. This avoids rendering an entire voxel map during a battle.
 
+Hit shakes and wave effects preserve the stage instead of briefly painting the original white field. The classic layout adds narrow, translucent backing strips behind Pokémon names; the rest of the status area stays open over the scene. Deliberate move flashes and palette effects are retained.
+
 Door fades now wait for the destination mesh before revealing it, with a four-second maximum extra hold and a short fade-in. Revisiting the last map can reuse its meshes: one departed map is retained only if its vertex buffers fit within 12 MiB (LÖVE also holds a CPU copy; this is not a total RAM cap). Trees and terrain now select the same cached mesh variant when crossing map boundaries. Cold neighbouring maps can still appear as their builds finish.
 
 Mesh uploads use LÖVE's packed data API because Gen1Recomp's mod sandbox does not expose FFI. Outdoor buildings use direct roof and wall surfaces. The retained furniture generator yields within its inner loops to keep input responsive.
@@ -31,6 +33,7 @@ No ROM, imported asset cache, save, or replacement Pokémon artwork is distribut
 - `lua tools/run_tests.lua` checks packed vertex order, upload boundaries, eviction of obsolete jobs, scenery simplification, building surfaces, shared tree meshes and frustum culling. Tests use Lua 5.3+ for `string.pack`; the mod runs under LÖVE's LuaJIT.
 - `scripts/benchmark.lua` is an engine `POKEPORT_DRIVER`. Use it only with a separate test copy of the user's data; it loads that copy and drives a repeatable route without saving. Its driver clock requires a 60 FPS cap.
 - `scripts/benchmark-scenes.lua` tests door fades and cached returns; set `LEAF_BENCH_KIND=battle` for native Surf/Bubblebeam, classic/wide layouts and the LIGHT/CLASSIC toggle. It creates a test party in memory only and never saves.
+- `scripts/benchmark-battle-presentation.lua` reproduces hit shakes and waves with a test party in memory. Unlike the older driver, it explicitly restores the copied FPS cap and matching fixed-step elapsed time. It records unwanted field fills, then runs a Surf/Tackle turn. Use only with isolated data.
 - `python3 scripts/package.py` builds a deterministic source-only ZIP and SHA-256 file.
 
 Forked from upstream commit `97ca3e1` (2.0.4 development line). The MIT license and upstream attribution are retained. See [CREDITS.md](CREDITS.md) and the inherited [CHANGELOG.md](CHANGELOG.md) for the original work.

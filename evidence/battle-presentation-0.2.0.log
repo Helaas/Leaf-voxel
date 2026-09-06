@@ -1,0 +1,23 @@
+[leaf-sdl2-fullscreen] loaded enabled=1 target=960x720
+[leaf-sdl2-fullscreen] SDL_CreateWindow requested=1024x768 flags=0x22 forcing=960x720 flags=0x1023
+xkbcommon: ERROR: couldn't find a Compose file for locale "en_US.UTF-8" (mapped to "en_US.UTF-8")
+[leaf-sdl2-fullscreen] SDL_SetWindowPosition ignoring=805240832,805240832
+[leaf-sdl2-fullscreen] SDL_SetWindowFullscreen forcing flags=0x1001
+arm_release_ver: g13p0-01eac0, rk_so_ver: 10
+[info] generated data loaded (222 maps, 151 species, 165 moves)
+[info] loaded mod LEAF_VOXEL 0.2.0
+[info] game loaded
+[info] display: 960x720 units, 960x720 px, fit scale 5 px/GB px
+[info] loaded save
+[leaf-sdl2-fullscreen] SDL_SetWindowFullscreen forcing flags=0x1001
+[info] map: REDS_HOUSE_2F at (3,6)
+LEAF_CONFIG layout=og colors=gbc fit=fixed hud=standard cap=30 animations=true
+[info] map: VIRIDIAN_FOREST at (8,10)
+LEAF_PRESENT t=5.02 fps=50.45 p95=24.48 zone_fills=0 wave_fills=0 rss_kb=113112 swap_kb=0 case=nil phase=messages
+LEAF_CASE idle t=7.05
+LEAF_PRESENT t=10.03 fps=55.64 p95=18.64 zone_fills=0 wave_fills=0 rss_kb=115352 swap_kb=0 case=idle phase=menu
+LEAF_CASE shake t=13.06
+LEAF_PRESENT t=15.04 fps=60.03 p95=17.75 zone_fills=714 wave_fills=0 rss_kb=115880 swap_kb=0 case=shake phase=menu
+LEAF_CASE wave t=19.06
+LEAF_PRESENT t=20.06 fps=60.04 p95=17.64 zone_fills=1446 wave_fills=60 rss_kb=117012 swap_kb=0 case=wave phase=menu
+LEAF_CASE turn t=25.05

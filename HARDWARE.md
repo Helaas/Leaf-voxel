@@ -1,5 +1,21 @@
 # MLP1 performance — Leaf Voxel
 
+## 0.2.1 battle presentation checks
+
+Test date: 2026-09-06. Read the running device's settings: original battle layout, GBC colours, fixed battle size, standard HUD, white native background, animations enabled and a 30 FPS cap. Leaf Voxel uses its default RES 1/3 and LIGHT battle mode. The test uses a separate on-device copy of those options and the existing isolated save; the user's live game is temporarily suspended in memory and resumed afterward. No saves or user settings are changed.
+
+The 0.2.0 reproduction shows the stage disappearing behind opaque native palette-zone fills during hit shakes and behind the second canvas's white clear during waves. Version 0.2.1 removes those intermediate fills, keeps the shifted/wavy native sprites and UI, and adds only narrow translucent strips behind the classic-layout names. Deliberate move flashes and palette effects remain.
+
+The final 120-second run uses `scripts/benchmark-battle-presentation.lua`: fixed idle, shake and wave cases, followed by a native Surf/Tackle turn and escape back to the forest (`LEAF_BATTLE_END run`). All sampled windows report **zero unwanted zone and wave fills**. Settled battle windows reach **30.00 FPS**, with p95 at most **34.19 ms**. The first Surf/Tackle window drops to **23.59 FPS**; this patch does not resolve first-use effect hitches. Initial loading windows reach 25.58 and 28.19 FPS; returning to the world reaches 29.03 FPS before settling at 30.00.
+
+The isolated test process peaks at **114.0 MiB RSS** across 23 five-second samples, with zero process swap in those samples. The suspended user game remains resident separately. These are sampled process figures; system paging was not measured for this run.
+
+The engine normally bypasses the saved FPS cap in driver mode. The final harness explicitly paces to the copied cap and supplies the matching fixed-step elapsed time to the game's accumulator. This checks rendering at the chosen cap, but does not reproduce normal-loop timing during hitches. The earlier 0.2.0 reproduction ran around 60 FPS before that harness correction, so it is visual evidence, **not a matched performance comparison**.
+
+Evidence: [0.2.0 reproduction](evidence/battle-presentation-0.2.0.log), [0.2.1 run](evidence/battle-presentation-0.2.1.log), [white hit background before](evidence/mlp1-battle-shake-before.png), [names after](evidence/mlp1-battle-names-0.2.1.png), [hit shake after](evidence/mlp1-battle-shake-0.2.1.png), [wave after](evidence/mlp1-battle-wave-0.2.1.png). Ten local tests pass, including removal of intermediate fills, preservation of deliberate flashes/dialogue, name-only strips and restoration of drawing state after errors. LuaJIT syntax checks pass. Device coverage is limited to the configuration and moves above.
+
+![Stage remains visible during a hit shake](evidence/mlp1-battle-shake-0.2.1.png)
+
 ## 0.2.0 battle and scene-change checks
 
 Test date: 2026-09-06, same hardware/runtime and isolated data setup described below. Both tests run for 120 seconds at RES 1/3 with the 60 FPS cap, using `scripts/benchmark-scenes.lua`. The scene-change test holds a fixed view after each warp; it is not the moving route used for 0.1.0. GPU frequency varied with the existing governor (300–800 MHz observed); clocks and swap configuration were not changed.

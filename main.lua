@@ -1,6 +1,6 @@
 -- Leaf Voxel: a small world and battle renderer for the MLP1.
 local mod = ...
-mod.exports.version = "0.2.0"
+mod.exports.version = "0.2.1"
 
 local V = { mod = mod, path = mod.path }
 local modules, dataFiles = {}, {}

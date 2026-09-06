@@ -1,0 +1,44 @@
+[leaf-sdl2-fullscreen] loaded enabled=1 target=960x720
+[leaf-sdl2-fullscreen] SDL_CreateWindow requested=1024x768 flags=0x22 forcing=960x720 flags=0x1023
+xkbcommon: ERROR: couldn't find a Compose file for locale "en_US.UTF-8" (mapped to "en_US.UTF-8")
+[leaf-sdl2-fullscreen] SDL_SetWindowPosition ignoring=805240832,805240832
+[leaf-sdl2-fullscreen] SDL_SetWindowFullscreen forcing flags=0x1001
+arm_release_ver: g13p0-01eac0, rk_so_ver: 10
+[info] generated data loaded (222 maps, 151 species, 165 moves)
+[info] loaded mod LEAF_VOXEL 0.2.1
+[info] game loaded
+[info] display: 960x720 units, 960x720 px, fit scale 5 px/GB px
+[info] loaded save
+[leaf-sdl2-fullscreen] SDL_SetWindowFullscreen forcing flags=0x1001
+[info] map: REDS_HOUSE_2F at (3,6)
+LEAF_CONFIG layout=og colors=gbc fit=fixed hud=standard cap=30 animations=true
+[info] map: VIRIDIAN_FOREST at (8,10)
+LEAF_PRESENT t=5.00 fps=25.58 p95=47.73 zone_fills=0 wave_fills=0 rss_kb=108156 swap_kb=0 case=nil phase=messages
+LEAF_CASE idle t=6.97
+LEAF_PRESENT t=10.01 fps=28.19 p95=34.05 zone_fills=0 wave_fills=0 rss_kb=110232 swap_kb=0 case=idle phase=menu
+LEAF_CASE shake t=13.01
+LEAF_PRESENT t=15.01 fps=30.00 p95=34.09 zone_fills=0 wave_fills=0 rss_kb=110864 swap_kb=0 case=shake phase=menu
+LEAF_CASE wave t=18.97
+LEAF_PRESENT t=20.04 fps=30.00 p95=34.00 zone_fills=0 wave_fills=0 rss_kb=111896 swap_kb=0 case=wave phase=menu
+LEAF_CASE turn t=24.97
+LEAF_ACTION SURF vs TACKLE
+LEAF_PRESENT t=25.07 fps=30.00 p95=34.09 zone_fills=0 wave_fills=0 rss_kb=112168 swap_kb=0 case=turn phase=messages
+LEAF_PRESENT t=30.08 fps=23.59 p95=34.15 zone_fills=0 wave_fills=0 rss_kb=112416 swap_kb=0 case=turn phase=messages
+LEAF_PRESENT t=35.11 fps=30.00 p95=34.19 zone_fills=0 wave_fills=0 rss_kb=112424 swap_kb=0 case=turn phase=messages
+LEAF_PRESENT t=40.14 fps=30.00 p95=34.05 zone_fills=0 wave_fills=0 rss_kb=112424 swap_kb=0 case=turn phase=menu
+LEAF_PRESENT t=45.17 fps=30.00 p95=34.04 zone_fills=0 wave_fills=0 rss_kb=112424 swap_kb=0 case=turn phase=menu
+LEAF_PRESENT t=50.18 fps=30.00 p95=33.98 zone_fills=0 wave_fills=0 rss_kb=112424 swap_kb=0 case=turn phase=menu
+LEAF_PRESENT t=55.18 fps=30.00 p95=33.97 zone_fills=0 wave_fills=0 rss_kb=112424 swap_kb=0 case=turn phase=menu
+LEAF_PRESENT t=60.21 fps=30.00 p95=34.14 zone_fills=0 wave_fills=0 rss_kb=112424 swap_kb=0 case=turn phase=menu
+LEAF_PRESENT t=65.24 fps=30.00 p95=34.07 zone_fills=0 wave_fills=0 rss_kb=112424 swap_kb=0 case=turn phase=menu
+LEAF_PRESENT t=70.27 fps=30.00 p95=33.97 zone_fills=0 wave_fills=0 rss_kb=112424 swap_kb=0 case=turn phase=menu
+LEAF_BATTLE_END run
+LEAF_PRESENT t=75.30 fps=29.03 p95=34.06 zone_fills=0 wave_fills=0 rss_kb=115056 swap_kb=0 case=turn phase=world
+LEAF_PRESENT t=80.34 fps=30.00 p95=33.99 zone_fills=0 wave_fills=0 rss_kb=116088 swap_kb=0 case=turn phase=world
+LEAF_PRESENT t=85.37 fps=30.00 p95=34.08 zone_fills=0 wave_fills=0 rss_kb=116088 swap_kb=0 case=turn phase=world
+LEAF_PRESENT t=90.37 fps=30.00 p95=33.96 zone_fills=0 wave_fills=0 rss_kb=116088 swap_kb=0 case=turn phase=world
+LEAF_PRESENT t=95.40 fps=30.00 p95=34.15 zone_fills=0 wave_fills=0 rss_kb=116344 swap_kb=0 case=turn phase=world
+LEAF_PRESENT t=100.44 fps=30.00 p95=33.97 zone_fills=0 wave_fills=0 rss_kb=116344 swap_kb=0 case=turn phase=world
+LEAF_PRESENT t=105.47 fps=30.00 p95=33.98 zone_fills=0 wave_fills=0 rss_kb=116344 swap_kb=0 case=turn phase=world
+LEAF_PRESENT t=110.50 fps=30.00 p95=34.03 zone_fills=0 wave_fills=0 rss_kb=116344 swap_kb=0 case=turn phase=world
+LEAF_PRESENT t=115.50 fps=30.00 p95=33.98 zone_fills=0 wave_fills=0 rss_kb=116736 swap_kb=0 case=turn phase=world

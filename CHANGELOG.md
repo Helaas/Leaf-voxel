@@ -1,5 +1,11 @@
 # Changelog
 
+## Leaf Voxel 0.2.1 — 2026-09-06
+
+- Keep the battle stage visible during hit shakes and wave effects by removing the engine's intermediate white background fills.
+- Add narrow, translucent name backings in the classic layout, preserving the scene behind the rest of the HUD.
+- Verify the fix against the MLP1's original battle layout, GBC colours, standard HUD, fixed size and 30 FPS cap.
+
 ## Leaf Voxel 0.2.0 — 2026-09-06
 
 - Added a cached, shallow battle stage with original Pokémon sprites, menus and move effects; LIGHT/CLASSIC option, classic and wide layouts.

@@ -7,6 +7,7 @@ Battle.setting = V.require("ModSetting").new("battleMode", "BATTLE",
 local Voxel = V.require("VoxelState")
 local Map = require("src.world.Map")
 local BattleState = require("src.battle.BattleState")
+local PaletteFX = require("src.render.PaletteFX")
 local target, signature
 
 function Battle.invalidate()
@@ -73,28 +74,58 @@ local function stage(battle)
   return target
 end
 
-local draw = BattleState.draw
-function BattleState:draw(...)
-  if not Voxel.active() or Battle.setting:get() ~= "light" or self.blankForAskName then
-    return draw(self, ...)
+local function enabled(battle)
+  return Voxel.active() and Battle.setting:get() == "light" and not battle.blankForAskName
+end
+
+local drawHUDs = BattleState.drawHUDs
+function BattleState:drawHUDs(slide)
+  -- WIDE already has status boxes. Back only the classic name rows, keeping
+  -- the stage visible through the rest of the status area.
+  if enabled(self) and not self:wideLayout() and not self.fieldCleared
+      and self:statusHUDVisible() and slide == 0 then
+    local g = love.graphics
+    local r, green, b, a = g.getColor()
+    g.setColor(1,1,1,.9)
+    if self.enemy and not self.showEnemyTrainer and not self.enemySendingOut
+        and not self.enemyHudPending and not self:growInScale(self.enemy)
+        and not self.introBalls and not self.enemy.fainted then
+      g.rectangle("fill", 4 + ((self.fx and self.fx.hudShakeX) or 0), 0, 88, 10)
+    end
+    if self.player and not self.safari and not self.demo and not self.showPlayerBack
+        and not self.player.fainted then
+      g.rectangle("fill", 78, 54, 82, 12)
+    end
+    g.setColor(r,green,b,a)
   end
-  self.game.renderer:setWorldOverride(stage(self))
+  return drawHUDs(self, slide)
+end
+
+local draw = BattleState.draw
+function Battle.drawNative(self, ...)
   local g, white = love.graphics, self.letterboxWhite
   self.letterboxWhite = false
-  -- Same narrow field-fill seam as upstream's standalone battle host. Keep
-  -- all later full-screen fills: move flashes must still cover the battle.
+  -- Remove paper used to clear intermediate battle surfaces. In particular,
+  -- applyWavy clears a SECOND canvas, and drawZonePass fills every palette
+  -- zone during a hit shake. Neither fill belongs over the cached stage.
   local rectangle, suppressed = g.rectangle, false
   g.clear(0,0,0,0)
   g.rectangle = function(mode,x,y,w,h,...)
     local _,_,_,alpha = g.getColor()
-    if not suppressed and mode == "fill" and x == 0 and y == 0
-        and h == 144 and (w == 160 or w == 304) and alpha > .99 then
-      suppressed = true
+    if mode == "fill" then
       local canvas = g.getCanvas()
-      if canvas and (canvas == self.bgCanvas or canvas == self.waveCanvas) then
-        g.clear(0,0,0,0)
+      local full = x == 0 and y == 0 and h == 144 and (w == 160 or w == 304)
+      local intermediate = canvas and (canvas == self.bgCanvas or canvas == self.waveCanvas)
+      if full and alpha > .99 and (intermediate or not suppressed) then
+        suppressed = true
+        if intermediate then g.clear(0,0,0,0) end
+        return
       end
-      return
+      -- The shade shader is active only for the native zone composite here;
+      -- its rectangles clear shake-exposed strips to opaque paper. Keep the
+      -- shifted canvas draw, which now reveals the stage in those strips.
+      local shader = g.getShader()
+      if shader and shader == PaletteFX.shader() then return end
     end
     return rectangle(mode,x,y,w,h,...)
   end
@@ -103,5 +134,11 @@ function BattleState:draw(...)
   self.letterboxWhite = white
   if not ok then error(result,0) end
   return result
+end
+
+function BattleState:draw(...)
+  if not enabled(self) then return draw(self, ...) end
+  self.game.renderer:setWorldOverride(stage(self))
+  return Battle.drawNative(self, ...)
 end
 return Battle
