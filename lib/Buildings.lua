@@ -1,4 +1,8 @@
--- Voxel world mode: a building voxelized from its own sprite.
+-- Leaf Voxel: tile-sized building surfaces and the retained small furniture models.
+-- Outdoor buildings use flatBuilding below. The original pixel modelling
+-- routines are retained only for furniture templates with separate parts.
+--
+-- Upstream furniture modelling notes:
 --
 -- A Game Boy overworld building is a fake-3D projection that packs several
 -- different 3D facings into one flat drawing: the roof is drawn as if seen
@@ -877,118 +881,6 @@ end
 -- pixel that voxel wears, or nil. Build ORDER is expressed as lookup
 -- order -- roof first, so it overwrites the walls it intersects, and walls
 -- are trimmed to its underside so nothing pokes through the surface.
-local function model(sp, pr, t)
-  if t.parts then return deskSetModel(sp, pr, t) end
-  local W, H, D = sp.W, sp.H, pr.D
-  local slab, roofRows = t.slab, t.roofRows
-  local top, ytop, ground = pr.top, pr.ytop, pr.ground
-
-  -- The roof's drawn span. A sprite inset from its box (B03) leaves outer
-  -- columns undrawn in the roof band; they carry no roof at all, and the
-  -- rim treatment belongs to the outermost drawn columns instead of the
-  -- box edge.
-  local x0d, x1d
-  for x = 0, W - 1 do
-    if top[x] < roofRows then
-      x0d = x0d or x
-      x1d = x
-    end
-  end
-  local ledge0, ledge1 = nil, nil
-  if t.ledge then ledge0, ledge1 = t.ledge[1], t.ledge[2] end
-
-  local rz0, rz1 = 0, D - 1 + (t.frontEave or 0)
-  local back, front = t.roofBack, t.roofFront
-  local cyc0, cyc1 = t.roofCycle[1], t.roofCycle[2]
-  local cycN = cyc1 - cyc0 + 1
-
-  -- Which drawn row lies at depth z. The drawing looks at the roof from
-  -- the north, so its top rows ARE the far edge and its bottom rows the
-  -- eave over the facade. The band is shallower than the building, so the
-  -- rims map one row per voxel and the middle cycles a run whose period is
-  -- the course rhythm -- picked up where the north rim left off, which
-  -- continues both the course lines and the roof texture seamlessly.
-  local roofSy = {}
-  for z = rz0, rz1 do
-    local df, db = z - rz0, rz1 - z          -- from the north / south edge
-    if df < back then
-      roofSy[z] = df
-    elseif db < front then
-      roofSy[z] = roofRows - 1 - db
-    else
-      roofSy[z] = cyc0 + (df - cyc0) % cycN
-    end
-  end
-
-  local T = {}
-  for x = 0, W - 1 do T[x] = ytop - top[x] end
-
-  local function at(x, y, z)
-    if x < 0 or x >= W then return nil end
-    local tx = T[x]
-
-    -- roof: a solid of constant thickness following the elevation profile
-    if top[x] < roofRows
-        and y > tx - slab and y <= tx and z >= rz0 and z <= rz1 then
-      if y == tx and x > x0d and x < x1d and z > rz0 and z < rz1 then
-        -- the surface itself. Clamping the row into the column's first
-        -- drawn row keeps the flank battens running down the slope
-        -- instead of falling off the silhouette.
-        local sy = roofSy[z]
-        if sy < top[x] then sy = top[x] end
-        return sy * W + x
-      end
-      -- The rim reproduces the eave the drawing itself paints under the
-      -- roof: a black outline, a shaded fascia, closed by the outline
-      -- again. (A GREY fascia band -- what the first cut had -- comes out
-      -- WHITE once the atlas is recoloured and turns every sloped end
-      -- into a black-and-white zip.) Under the surface it is all shadow.
-      local outer = x == x0d or x == x1d or z == rz0 or z == rz1
-      if not outer then return pr.shadeTexel[DARK] end
-      if y == tx or y == tx - slab + 1 then return pr.shadeTexel[BLACK] end
-      return pr.shadeTexel[DARK]
-    end
-
-    -- trimmed: under the slope. A column with no roof over it has no
-    -- underside to trim to, and must not be cut away by a profile the
-    -- drawing never set.
-    if top[x] < roofRows and y > tx - slab then return nil end
-
-    -- the awning: the band juts two voxels past the walls, front and back
-    if ledge0 and (z == -2 or z == -1 or z == D or z == D + 1) then
-      local sy = ground - 1 - y
-      if sy >= ledge0 and sy <= ledge1 and sp.inside[sy * W + x] then
-        return sy * W + x
-      end
-      return nil
-    end
-
-    -- the facade, extruded straight back over the footprint. Rows map
-    -- against the measured ground line, not the grid's last row: the two
-    -- differ only for furniture standing on open floor (see measure).
-    if z < 0 or z >= D then return nil end
-    local sy = ground - 1 - y
-    local i = sy * W + x
-    if y == 0 and not sp.inside[i] and sy > 0 and sp.inside[i - W] then
-      -- the drawing's last row is the ground the building stands on, so
-      -- its base course is one row up; without this the walls float a
-      -- voxel over their own plot
-      sy, i = sy - 1, i - W
-    end
-    if not sp.inside[i] then return nil end
-    if z == D - 1 then
-      if pr.recess[i] then return nil end
-      return i
-    end
-    if z == 0 then return i end
-    return pr.interior[i]
-  end
-
-  return { at = at, W = W, ytop = ytop,
-           zmin = ledge0 and -2 or 0,
-           zmax = math.max(rz1, ledge0 and (D + 1) or 0) }
-end
-
 -- ------------------------------------------------------------------ emit --
 
 -- Cull to the shell and merge. A run of faces collapses into one quad when
@@ -1012,8 +904,10 @@ local function emit(m, sp, atlasW, atlasH)
   for y = 0, ytop do
     Budget.tick()
     for z = zmin, zmax do
+      Budget.tick()
       local base = (y * zn + (z - zmin)) * W
       for x = 0, W - 1 do
+        Budget.tick()
         local v = m.at(x, y, z)
         cell[base + x] = v
         if v then quads.voxels = quads.voxels + 1 end
@@ -1026,7 +920,9 @@ local function emit(m, sp, atlasW, atlasH)
   for y = 0, ytop do
     Budget.tick()
     for z = zmin, zmax do
+      Budget.tick()
       for x = 0, W - 1 do
+        Budget.tick()
         if ci(x, y, z) and not (ci(x + 1, y, z) and ci(x - 1, y, z)
             and ci(x, y + 1, z) and ci(x, y - 1, z)
             and ci(x, y, z + 1) and ci(x, y, z - 1)) then
@@ -1083,6 +979,7 @@ local function emit(m, sp, atlasW, atlasH)
     for y = 0, ytop do
       Budget.tick()
       for z = zmin, zmax do
+        Budget.tick()
         local x = 0
         while x < W do
           if ci(x, y, z) and not ci(x, y, z + d) then
@@ -1115,6 +1012,7 @@ local function emit(m, sp, atlasW, atlasH)
       -- the underside of the bottom layer is the ground it stands on
       if not (d == -1 and y == 0) then
         for z = zmin, zmax do
+        Budget.tick()
           local x = 0
           while x < W do
             if ci(x, y, z) and not ci(x, y + d, z) then
@@ -1144,6 +1042,7 @@ local function emit(m, sp, atlasW, atlasH)
   for _, d in ipairs({ 1, -1 }) do
     for y = 0, ytop do
       for x = 0, W - 1 do
+        Budget.tick()
         local z = zmin
         while z <= zmax do
           local i = ci(x, y, z)
@@ -1182,6 +1081,59 @@ end
 -- ------------------------------------------------------------- placement --
 
 -- Does the template's tile grid sit at (tx, ty)?
+-- Outdoor buildings use tile-sized surfaces: a flat roof and textured walls.
+-- ponytail: no per-pixel roof slope or recessed windows; restore only if a
+-- measured device budget allows them. The authored footprint stays intact.
+local function flatBuilding(t, perRow, atlasW, atlasH)
+  local rows = {}
+  for _, row in ipairs(t.topRows or {}) do rows[#rows + 1] = row end
+  for _, row in ipairs(t.tiles) do rows[#rows + 1] = row end
+  local W, H = #rows[1] * 8, #rows * 8
+  local roof = t.roofRows
+  local height = H - roof
+  local depth = t.depthPx or (t.depth or #t.tiles) * 8
+  local quads = {}
+  local function put(a, b, c, d, uv, shade)
+    quads[#quads + 1] = {a, b, c, d, uv = uv, shade = shade}
+  end
+  -- Split at both atlas tile boundaries and the roof/facade boundary.
+  for row, tiles in ipairs(rows) do
+    for col, tile in ipairs(tiles) do
+      Budget.tick()
+      local x0, x1 = (col-1)*8, col*8
+      local sy = (row-1)*8
+      local ax, ay = (tile % perRow)*8, math.floor(tile/perRow)*8
+      local function uv(a, b)
+        local u0, u1 = (ax+.02)/atlasW, (ax+7.98)/atlasW
+        local v0, v1 = (ay+a-sy+.02)/atlasH, (ay+b-sy-.02)/atlasH
+        return {{u0,v0},{u1,v0},{u1,v1},{u0,v1}}
+      end
+      local stop = math.min(sy+8, roof)
+      if sy < stop then
+        local z0, z1 = sy/roof*depth, stop/roof*depth
+        put({x0,height,z0},{x1,height,z0},{x1,height,z1},{x0,height,z1},
+          uv(sy, stop), SHADE.top)
+      end
+      local start = math.max(sy, roof)
+      if start < sy+8 then
+        local y0, y1 = H-(sy+8), H-start
+        local tex = uv(start, sy+8)
+        local front = {tex[4],tex[3],tex[2],tex[1]}
+        put({x0,y0,depth},{x1,y0,depth},{x1,y1,depth},{x0,y1,depth},front,SHADE.south)
+        put({x1,y0,0},{x0,y0,0},{x0,y1,0},{x1,y1,0},
+          {tex[3],tex[4],tex[1],tex[2]},SHADE.north)
+        if col == 1 then
+          put({0,y0,0},{0,y0,depth},{0,y1,depth},{0,y1,0},front,SHADE.side)
+        end
+        if col == #tiles then
+          put({W,y0,depth},{W,y0,0},{W,y1,0},{W,y1,depth},front,SHADE.side)
+        end
+      end
+    end
+  end
+  return quads
+end
+
 local function matches(S, t, tx, ty)
   local tiles = t.tiles
   for r = 1, #tiles do
@@ -1251,9 +1203,12 @@ function Buildings.build(S, map, data, perRow)
                   -- detector they stood as a second half-building.
                   models[key] = {}
                 else
-                  local sp = read(t, data, perRow)
-                  local pr = measure(sp, t)
-                  models[key] = emit(model(sp, pr, t), sp, atlasW, atlasH)
+                  if t.parts then
+                    local sp = read(t, data, perRow)
+                    models[key] = emit(deskSetModel(sp, measure(sp, t), t), sp, atlasW, atlasH)
+                  else
+                    models[key] = flatBuilding(t, perRow, atlasW, atlasH)
+                  end
                 end
               end
               built = models[key]
@@ -1346,9 +1301,7 @@ function Buildings.stamp(S, map, quads, tx, ty, bw, bh, t)
   end
 end
 
--- What the models built so far cost, keyed "<tileset>:<index>": the voxel
--- and shell counts tools/building_voxels.py checks this implementation
--- against (Stage 5 of the methodology), and the quad count that ships.
+-- Cached model counts by template; voxel/shell counts exist for furniture only.
 function Buildings.stats()
   local out = {}
   for key, quads in pairs(models) do

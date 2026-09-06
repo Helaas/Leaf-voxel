@@ -16,7 +16,7 @@ Shadows.setting = ModSetting.new("shadowQuality", "SHADOWS",
                                  { "ON", "OFF" })
 
 function Shadows.enabled()
-  return Shadows.setting:get() ~= "off"
+  return false
 end
 
 function Shadows.off()

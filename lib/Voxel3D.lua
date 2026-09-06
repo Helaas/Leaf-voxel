@@ -70,218 +70,32 @@ Voxel3D.FACE_SHADE = {
 }
 
 local SHADER = [[
-  varying float vShade;
-  varying vec3 vSun;          // this fragment's place in the sun's view
-#ifdef VOXEL_GRID
-  // model space, one unit per voxel -- see VoxelGrid. Precision matters
-  // here in a way it does not for a colour: the seam is the FRACTIONAL
-  // part of a coordinate that runs to a few thousand across a big route,
-  // so a mediump varying would quantise the fraction away entirely.
-  varying LOVE_HIGHP_OR_MEDIUMP vec3 vGrid;
-#endif
+varying float vShade;
 #ifdef VERTEX
-  uniform mat4 vp;
-  uniform mat4 model;
-  uniform mat4 sunModel;      // where the SUN sees this vertex (see below)
-  uniform mat4 sunVP;         // world -> the shadow map's unit cube
-  uniform vec3 eye;
-  uniform float pull;
-  uniform vec3 curve;         // xy = the focus in world XZ, z = k; 0 = off
-  attribute float VertexShade;
-  vec4 position(mat4 transform_projection, vec4 vertex_position) {
-    vShade = VertexShade;
-#ifdef VOXEL_GRID
-    // MODEL space, deliberately: every mesh here is built a unit per
-    // voxel in its own frame, so the seams ride the model however it is
-    // posed rather than the world's grid sliding across a leaning sprite
-    vGrid = vertex_position.xyz;
-#endif
-    vec4 w = model * vertex_position;
-    // The shadow lookup runs off `sunModel`, not `model`. For terrain the
-    // two are the same matrix, but a character is drawn as a slab LEANING
-    // back by the camera's pitch -- a trick played on the viewer, which
-    // the sun never saw: it lit the upright card. Looking up with the
-    // leaned position asks whether the sun reached a place the figure is
-    // not, and since the lean tips the body north and shadows now fall
-    // north, every sprite's own card fell across its front. Looking up
-    // with the card's position asks the question the sun actually
-    // answered. (The pull below is excluded for the same reason: it is a
-    // depth trick aimed at the camera's own buffer.)
-    vSun = (sunVP * (sunModel * vertex_position)).xyz;
-    // The curved world (see WorldCurve): drop every vertex by the square
-    // of how far its column stands from the camera's focus. Applied AFTER
-    // the shadow lookup above and clear of the wireframe's model space, so
-    // both are worked out on the flat world and the bend carries them
-    // along -- which is why neither has to know this exists. Along Y only,
-    // so a column moves as one piece: the world tips away and the
-    // buildings standing on it stay upright.
-    if (curve.z > 0.0) {
-      vec2 cd = w.xz - curve.xy;
-      w.y -= dot(cd, cd) * curve.z;
-    }
-    // camera-ward pull: move the vertex along ITS OWN ray to the eye.
-    // This is a pure depth bias -- the projection of a point moved along
-    // its eye ray is bit-identical, so there is no screen drift at all.
-    // (An earlier CPU version translated along the central view axis,
-    // which preserved only the screen centre and made off-centre sprites
-    // and grass swim against the ground while the camera scrolled.)
-    if (pull > 0.0) {
-      w.xyz += normalize(eye - w.xyz) * pull;
-    }
-    return vp * w;
-  }
+uniform mat4 vp;
+uniform mat4 model;
+uniform vec3 eye;
+uniform float pull;
+attribute float VertexShade;
+vec4 position(mat4 transform_projection, vec4 vertex_position) {
+  vShade = VertexShade;
+  vec4 w = model * vertex_position;
+  if (pull > 0.0) w.xyz += normalize(eye - w.xyz) * pull;
+  return vp * w;
+}
 #endif
 #ifdef PIXEL
-  uniform Image sunMap;
-  uniform float sunDark;      // how far into black a shadow goes; 0 = off
-  uniform float sunBias;
-  uniform vec2 sunTexel;
-
-  // the two-channel pack ShadowMap writes: high byte, then low
-  float sunDepth(vec2 uv) {
-    vec4 c = Texel(sunMap, uv);
-    return c.r + c.g * (1.0 / 255.0);
-  }
-
-  // 1.0 in full sun, 1.0 - sunDark in full shadow. Four taps half a texel
-  // out on the diagonals: a 2x2 box filter, which is what turns the
-  // shadow map's texel staircase into a one-pixel soft edge.
-  float sunlight(vec3 p) {
-    if (sunDark <= 0.0) return 1.0;
-    // outside the sun's frustum nothing was recorded, so nothing occludes
-    if (p.x < 0.0 || p.x > 1.0 || p.y < 0.0 || p.y > 1.0 || p.z > 1.0) {
-      return 1.0;
-    }
-    // Ease the shadows off at the frustum's rim. The map covers the ground
-    // the camera can see out to a cap, and past the low rungs -- 75 degrees
-    // especially -- the horizon is further than any box worth paying for.
-    // Without this the covered region simply ENDS, drawing a hard line
-    // across the middle distance where every shadow stops at once; with it
-    // the far field just loses them, which reads as distance.
-    vec2 e = min(p.xy, 1.0 - p.xy);
-    float edge = smoothstep(0.0, 0.06, min(e.x, e.y));
-    if (edge <= 0.0) return 1.0;
-    float z = p.z - sunBias;
-    float lit = step(z, sunDepth(p.xy + sunTexel * vec2(-0.5, -0.5)))
-              + step(z, sunDepth(p.xy + sunTexel * vec2( 0.5, -0.5)))
-              + step(z, sunDepth(p.xy + sunTexel * vec2(-0.5,  0.5)))
-              + step(z, sunDepth(p.xy + sunTexel * vec2( 0.5,  0.5)));
-    return 1.0 - sunDark * edge * (1.0 - lit * 0.25);
-  }
-
-#ifdef VOXEL_GRID
-  uniform float gridDark;     // how far toward black a seam pulls; 0 = off
-  uniform float gridWidth;    // seam width, in display pixels
-
-  // How much of this fragment a voxel seam covers, 0 to 1.
-  float voxelSeam(vec3 p) {
-    // how much of `p` this fragment spans on screen, per axis: the
-    // conversion from model units to display pixels, measured rather than
-    // derived, so it holds under any camera pitch or zoom
-    vec3 w = fwidth(p);
-    vec3 d = abs(fract(p + 0.5) - 0.5);      // distance to the nearest plane
-    // The axis a face does not vary along is that face's own normal, and
-    // its distance is a constant zero -- take it at face value and every
-    // face floods solid. Push those axes out of reach instead of dividing
-    // by their zero.
-    vec3 live = step(1e-4, w);
-    vec3 px = d / max(w, vec3(1e-6)) + (1.0 - live) * 1e6;
-    float near = min(min(px.x, px.y), px.z);
-    // Fade out where a voxel is too small to hold a line. Survey zoom
-    // draws a world pixel at about a display pixel, and a wall seen nearly
-    // edge-on squashes one to nothing at any zoom -- either way the seams
-    // land closer together than they are wide, and drawn anyway they stop
-    // being a wireframe and become a flat 45% dimming of the whole scene.
-    // The tightest axis decides, which is the honest test of whether the
-    // grid can be resolved at all.
-    float span = 1.0 / max(max(w.x, max(w.y, w.z)), 1e-6);
-    float fade = clamp((span - 2.0) * 0.5, 0.0, 1.0);
-    // the textbook antialiased line: solid within the half-width, fading
-    // over the one pixel outside it
-    return fade * clamp(gridWidth * 0.5 + 0.5 - near, 0.0, 1.0);
-  }
-#endif
-
-  uniform vec3 ghostColor;    // the flat silhouette colour
-  uniform float ghost;        // 0 = shade normally, 1 = flatten to it
-  uniform float lightOn;      // 1 = scene lighting, 0 = texture true-colour
-  uniform vec3 dayTint;       // the hour's light on the world; 1,1,1 = noon
-  uniform Image glassMask;    // opaque where the atlas texel is window glass
-  uniform vec2 glassSize;     // the mask's dimensions: tc -> atlas texels
-  uniform float glassNight;   // 0 = daylight .. 1 = the lamps are on
-  uniform float glassPhase;   // the glint's phase: advances with TRAVEL
-  uniform float glassGlint;   // and its strength: 0 while standing still
-  uniform float glassOn;      // 0 for sprite-sheet draws (see Voxel3D.glass)
-
-  vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc) {
-    vec4 p = Texel(tex, tc);
-    // sprite sheets key GB OBJ color 0 to alpha 0; discarding rather than
-    // blending keeps those texels out of the depth buffer, so a model never
-    // carves a transparent hole out of whatever stands behind it
-    if (p.a < 0.5) discard;
-    // UNLIT is an exact texture pass, not merely a zero-weight blend with
-    // the lit result. Some GLSL drivers still evaluate both sides of mix(),
-    // including the shadow lookup, and have shown pieces of that result on
-    // battle cards even when lightOn was zero. Returning here guarantees an
-    // UNLIT card cannot receive face light, the day tint, voxel seams, glass
-    // or any cast/self shadow.
-    if (lightOn < 0.5) {
-      return vec4(mix(p.rgb, ghostColor, ghost), 1.0) * color;
-    }
+uniform float ghost;
+uniform vec3 ghostColor;
+vec4 effect(vec4 color, Image tex, vec2 tc, vec2 sc) {
+  vec4 p = Texel(tex, tc);
+  if (p.a < 0.5) discard;
 #ifdef UNLIT_ONLY
-    // A separately compiled card shader. Unlike a uniform branch in the
-    // scene shader, this program contains no live day/shadow calculation for
-    // a driver to evaluate or fold incorrectly. Ghost remains for hit flashes.
-    return vec4(mix(p.rgb, ghostColor, ghost), 1.0) * color;
+  return vec4(mix(p.rgb, ghostColor, ghost), 1.0) * color;
+#else
+  return vec4(mix(p.rgb * vShade, ghostColor, ghost), 1.0) * color;
 #endif
-    // the hour's tint multiplies like the sun terms do: it is LIGHT, the
-    // same warm or moonlit cast on every surface, not a palette swap
-    vec3 litRgb = p.rgb * vShade * sunlight(vSun) * dayTint;
-    vec3 rgb = litRgb;
-#ifdef VOXEL_GRID
-    // darken what is there rather than painting a colour, so a seam across
-    // dark grass and one across a white roof each stay in their own palette
-    rgb *= 1.0 - gridDark * voxelSeam(vGrid);
-#endif
-    // WINDOW GLASS, marked per atlas texel by the mask (see GlassMask).
-    // By day a thin diagonal glint crosses the panes WHILE THE VIEW MOVES
-    // -- the phase is fed by the camera's own travel and the strength dies
-    // within a beat of standing still, because a reflection is something
-    // the viewpoint does: still camera, still glass. It lifts the texel
-    // toward sky-white and leaves the art visible through it. After dark
-    // the pane is LIT: the texel's own shine pattern carried into a warm
-    // lamp colour, replacing the shaded answer above -- so a lit window
-    // ignores the sun, every shadow and the hour's tint, exactly as a
-    // window with a lamp behind it does.
-    // glassOn gates the whole thing per DRAW: the mask is shaped like the
-    // tileset atlas, and only meshes textured FROM that atlas may consult
-    // it -- a character samples its own sprite sheet, whose coordinates
-    // land on the mask's pane rectangles by accident and would stripe the
-    // cast with lamplight at night.
-    float glass = Texel(glassMask, tc).a * glassOn;
-    if (glass > 0.0) {
-      // the sweep lives in the PANE's own space (atlas texels), not the
-      // screen's: a pattern anchored to the screen has the world sliding
-      // through it at zoom speed whenever the camera pans, which strobed --
-      // worst where the pan and the phase ran opposite ways. Anchored to
-      // the glass, panning moves nothing; only the phase does, a fraction
-      // of a texel per step, the same in every walking direction.
-      float sweep = sin(tc.x * glassSize.x * 0.8 - glassPhase);
-      float glint = pow(max(sweep, 0.0), 20.0) * 0.55 * glassGlint;
-      vec3 pane = mix(rgb, vec3(0.93, 0.97, 1.0), glint * glass);
-      float shine = dot(p.rgb, vec3(0.299, 0.587, 0.114));
-      vec3 lamp = vec3(1.0, 0.84, 0.5) * (0.5 + 0.55 * shine);
-      rgb = mix(pane, lamp, glassNight * glass);
-    }
-    // The hidden player is a SHAPE, not a dimmed picture of itself. Tinting
-    // through `color` could only multiply the sprite's own pixels, which
-    // darkens each one by its own amount and keeps the character's internal
-    // detail; replacing the colour outright is what makes it read as one
-    // solid silhouette. Last in the chain, so neither the sun nor a voxel
-    // seam can mottle it.
-    rgb = mix(rgb, ghostColor, ghost);
-    return vec4(rgb, 1.0) * color;
-  }
+}
 #endif
 ]]
 

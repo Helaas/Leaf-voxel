@@ -61,7 +61,7 @@ local RING = 12
 -- pinned cells simply are not claimed and fall through to the mesher's
 -- plain box -- cheap distant scenery. (Declared up here rather than
 -- beside buildCylinders because forMap's grid resolve reads it too.)
-local ROUND_RING = 4
+local TREE_RING = 4
 
 -- object-mode gates
 local OBJECT_MAX_ROWS = 6          -- a prop is at most 48px of drawing
@@ -165,22 +165,8 @@ function Structures.forMap(map)
   local TileRenderer = require("src.render.TileRenderer")
   local borderId = TileRenderer.borderBlockFor(map)
   local borderBlk = borderId and tileset.blocks[borderId + 1] or nil
-  -- TREES fill stops at ROUND_RING instead of running the full RING.
-  -- Only that far out does a tree cell get carved into a hull; past it
-  -- the cells fall through to the mesher's plain box, and a slab of
-  -- flat-topped boxes beside the modelled wall reads as a painted-on
-  -- plateau -- the wall looking like it was cut off with scissors. So
-  -- the far ring is simply not built: beyond ROUND_RING tileLookup
-  -- answers nil, which is the same "nothing out there" BLACK already
-  -- produces and every pass below already copes with. The cut lands on
-  -- the carve boundary exactly -- the 2x2-cell canopy scan starts at
-  -- floor(-RING/2) and RING, ROUND_RING and the body are all multiples
-  -- of 4 tiles, so no group is left half-resolved at the edge.
-  --
-  -- WATER and the other tilesets' own borders keep the full ring: a flat
-  -- sheet of water is what water looks like from above anyway, and an
-  -- interior's border is black already.
-  local hullRingOnly = borderBlk and def.tileset == "OVERWORLD"
+  -- Keep the decorative tree border four tiles deep to bound geometry.
+  local thinTreeRing = borderBlk and def.tileset == "OVERWORLD"
                        and (TileRenderer.voidFill or "trees") == "trees"
   local tw2, th2 = tw, th
   local function tileLookup(tx, ty)
@@ -188,9 +174,9 @@ function Structures.forMap(map)
       return map:tileAt(tx, ty)
     end
     if not borderBlk then return nil end
-    if hullRingOnly and (tx < -ROUND_RING or ty < -ROUND_RING
-                         or tx >= tw2 + ROUND_RING
-                         or ty >= th2 + ROUND_RING) then
+    if thinTreeRing and (tx < -TREE_RING or ty < -TREE_RING
+                         or tx >= tw2 + TREE_RING
+                         or ty >= th2 + TREE_RING) then
       return nil
     end
     return borderBlk[(ty % 4) * 4 + (tx % 4) + 1] or 0
@@ -220,12 +206,7 @@ function Structures.forMap(map)
   -- upright thing. Modelling the building first and claiming its tiles
   -- keeps every one of them off it.
   --
-  -- (grassQuads live apart from objectQuads: grass renders as its own mesh
-  -- AFTER the characters -- see VoxelScene -- so the southern tuft row
-  -- still overdraws a walker's feet even though characters stamp over
-  -- terrain.)
   S = { shapeAt = shapeAt, tileAt = tileAt, outdoor = Map.isOutdoor(def),
-        hideBareRing = hullRingOnly or nil,
         runs = {}, skip = {}, ground = {}, doorFold = {}, objectQuads = {},
         grassQuads = {}, flowerQuads = {}, roundStamps = {}, figures = {} }
   Buildings.build(S, map, pixels(tileset), perRow)
@@ -278,24 +259,6 @@ function Structures.forMap(map)
     return s and s.art == "upright" and not s.authored
   end
 
-  -- ---- cylinders: profile-pinned round graphics, one per 16x16 cell ----
-  -- the flat ground tiles this map actually places, for the hull's
-  -- ground matching: the ball's own drawn background picks its floor
-  local groundTiles = {}
-  do
-    local seenG = {}
-    for k, s in pairs(shapeAt) do
-      if s and s.flat and s.class == "ground" then
-        local t = tileAt[k]
-        if t and not seenG[t] then
-          seenG[t] = true
-          groundTiles[#groundTiles + 1] = t
-        end
-      end
-    end
-  end
-  Structures.buildCylinders(S, map, x0, x1, y0, y1, groundTiles)
-
   -- ---- stairs: profile-pinned cells that render as real steps ----
   Structures.buildStairs(S, map, x0, x1, y0, y1)
 
@@ -319,6 +282,15 @@ function Structures.forMap(map)
   -- resolving as the wall it is -- without a second copy of the drawing
   -- flat on its face.
   Structures.buildMounted(S, map, x0, x1, y0, y1)
+
+  local groundTiles, seenGround = {}, {}
+  for k, shape in pairs(shapeAt) do
+    local tile = tileAt[k]
+    if shape.flat and shape.class == "ground" and not seenGround[tile] then
+      groundTiles[#groundTiles+1], seenGround[tile] = tile, true
+    end
+  end
+  Structures.buildCylinders(S, map, x0, x1, y0, y1, groundTiles)
 
   -- ---- flood-fill regions of structural tiles ----
   local seen = {}
@@ -476,11 +448,6 @@ function Structures.forMap(map)
         end
       end
     end
-
-    -- ---- tall grass: two standing tuft rows per tile. BODY only: the 2D
-    -- renderer never draws a neighbour's ring, and standing scenery past a
-    -- map's edge would poke into the map next door ----
-    Structures.buildGrass(S, map, 0, tw - 1, 0, th - 1, data)
 
     -- ---- flowers: the animated meadow tile stands as a 1px cutout ----
     Structures.buildFlowers(S, map, tw, th, x0, x1, y0, y1, data)
@@ -1332,8 +1299,8 @@ function Structures.buildCylinders(S, map, x0, x1, y0, y1, groundTiles)
       local ckey = cy * 8192 + cx
       local k = keyOf(cx * 2, cy * 2)
       local s = (not grouped[ckey]) and S.shapeAt[k] or nil
-      local near = cx * 2 >= -ROUND_RING and cx * 2 < tw + ROUND_RING
-               and cy * 2 >= -ROUND_RING and cy * 2 < th + ROUND_RING
+      local near = cx * 2 >= -TREE_RING and cx * 2 < tw + TREE_RING
+               and cy * 2 >= -TREE_RING and cy * 2 < th + TREE_RING
       if s and s.art == "canopy" and near then
         -- ONE 32px hull over the 2x2-cell drawing. The partner cells
         -- must be round-pinned too, or the drawing is partial (a map
@@ -3325,122 +3292,6 @@ function Structures.buildMounted(S, map, x0, x1, y0, y1)
   end
 end
 
--- ---- tall grass ----
-
--- A tall-grass CELL is four tufts: 2x2 tiles, and each 8x8 tile is one
--- whole clump of grass. Each tile stands as its own thin per-pixel slab
--- at ITS OWN depth -- the cell's north tile row in the north half of the
--- cell, the south row in the south half -- over the flat grass base the
--- tile already renders. So the player walks BETWEEN the two rows, and
--- the southern row occludes their feet the way the 2D grass overdraw
--- did. Transparency respected: only the tuft strokes stand. Runs of
--- adjacent pixels merge into single quads, and one template per grass
--- tile id is stamped across the map (grass comes in fields).
---
--- One tile is ONE standing piece, full height. The first cut split each
--- tile again into its top and bottom four art rows and stood those at
--- two different depths, which cut every blade that runs down the tile
--- clean in half -- the two halves ended up 4px tall and 4px apart in
--- depth, so a clump read as two stubs rather than one tuft.
-local GRASS_THICK = 2
-
-local function grassTemplate(map, data, tileId)
-  local perRow = map.tileset.tilesPerRow or 16
-  local atlasW = map.tileset.imageWidth or 128
-  local atlasH = map.tileset.imageHeight or 48
-  local ax0 = (tileId % perRow) * 8
-  local ay0 = math.floor(tileId / perRow) * 8
-
-  local function opaque(px, py)
-    if px < 0 or px > 7 or py < 0 or py > 7 then return false end
-    local r, g, b, a = data:getPixel(ax0 + px, ay0 + py)
-    return a > 0 and math.min(r, g, b) <= 0.83
-  end
-
-  local quads = {}
-  -- the slab stands across the middle of its own tile, so the two tile
-  -- rows of a cell are half a cell apart in depth
-  local zMid = 4
-  local zB, zF = zMid - GRASS_THICK / 2, zMid + GRASS_THICK / 2
-  for iy = 0, 7 do
-    local yTop = 8 - iy
-    local yBot = yTop - 1
-    local ix = 0
-    while ix < 8 do
-      if opaque(ix, iy) then
-        local ix2 = ix
-        while ix2 + 1 < 8 and opaque(ix2 + 1, iy) do
-          ix2 = ix2 + 1
-        end
-        local u0 = (ax0 + ix + 0.05) / atlasW
-        local u1 = (ax0 + ix2 + 0.95) / atlasW
-        local v0 = (ay0 + iy + 0.05) / atlasH
-        local v1 = (ay0 + iy + 0.95) / atlasH
-        quads[#quads + 1] = {           -- front
-          { ix, yBot, zF }, { ix2 + 1, yBot, zF },
-          { ix2 + 1, yTop, zF }, { ix, yTop, zF },
-          uv = { { u0, v1 }, { u1, v1 }, { u1, v0 }, { u0, v0 } },
-          shade = 1,
-        }
-        quads[#quads + 1] = {           -- back
-          { ix2 + 1, yBot, zB }, { ix, yBot, zB },
-          { ix, yTop, zB }, { ix2 + 1, yTop, zB },
-          uv = { { u1, v1 }, { u0, v1 }, { u0, v0 }, { u1, v0 } },
-          shade = 0.68,
-        }
-        -- blade tips: a top strip where the row above is clear
-        if not opaque(ix, iy - 1) then
-          quads[#quads + 1] = {
-            { ix, yTop, zB }, { ix2 + 1, yTop, zB },
-            { ix2 + 1, yTop, zF }, { ix, yTop, zF },
-            uv = { { u0, v0 }, { u1, v0 }, { u1, v0 }, { u0, v0 } },
-            shade = 1,
-          }
-        end
-        ix = ix2 + 1
-      else
-        ix = ix + 1
-      end
-    end
-  end
-  return quads
-end
-
-function Structures.buildGrass(S, map, x0, x1, y0, y1, data)
-  local templates = {}
-  local quads = S.grassQuads
-  for ty = y0, y1 do
-    for tx = x0, x1 do
-      Budget.tick()
-      local k = keyOf(tx, ty)
-      local s = S.shapeAt[k]
-      -- tufts only where the CELL is tall grass by the engine's own rule
-      -- (isGrassCell: the cell's collision tile). The grass GRAPHIC also
-      -- appears as decorative filler inside ordinary ground blocks, and a
-      -- tile-level test sprouted tufts all over town plazas.
-      if s and s.art == "grass"
-         and map:isGrassCell(math.floor(tx / 2), math.floor(ty / 2)) then
-        local tileId = S.tileAt[k]
-        local tpl = templates[tileId]
-        if not tpl then
-          tpl = grassTemplate(map, data, tileId)
-          templates[tileId] = tpl
-        end
-        local wx, wz = tx * 8, ty * 8
-        for _, q in ipairs(tpl) do
-          quads[#quads + 1] = {
-            { q[1][1] + wx, q[1][2], q[1][3] + wz },
-            { q[2][1] + wx, q[2][2], q[2][3] + wz },
-            { q[3][1] + wx, q[3][2], q[3][3] + wz },
-            { q[4][1] + wx, q[4][2], q[4][3] + wz },
-            uv = q.uv, shade = q.shade,
-          }
-        end
-      end
-    end
-  end
-end
-
 -- ---- flowers ----
 
 -- The animated flower tile stands up as a billboard ONE VOXEL deep, cut
@@ -3642,8 +3493,6 @@ function Structures.buildFlowers(S, map, tw, th, x0, x1, y0, y1, data)
 end
 
 -- Drop one map's analysis (Cut changed the block layer) or everything.
--- Hull templates key on art content (tileset + tiles), which a block edit
--- cannot change, so only the full drop clears them (atlas reload).
 function Structures.invalidate(mapId)
   if mapId then
     cache[mapId] = nil

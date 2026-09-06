@@ -41,9 +41,8 @@ local Voxel = {}
 -- a head should start from. Everything angle-derived (the sky's fade, the
 -- billboard lean the blend eases away) reads that 75 while the first-person
 -- rig owns the actual camera.
-Voxel.ANGLES_DEG = { 0, 35, 15, 35, 50, 75, 75, 75 }
-Voxel.ANGLE_LABELS = { "OFF", "FULL", "15", "35", "50", "75",
-                       "1ST", "3RD (EXPERIMENTAL)" }
+Voxel.ANGLES_DEG = { 0, 35, 15, 35, 50, 75 }
+Voxel.ANGLE_LABELS = { "OFF", "ON", "15", "35", "50", "75" }
 Voxel.MAX_LEVEL = #Voxel.ANGLES_DEG - 1
 
 -- the rung FULL sits on, so nothing has to hunt for it by label
@@ -106,7 +105,7 @@ end
 -- exactly what the key promises -- and the key is also the way back OUT of
 -- first person on a keyboard, where the mouse is captured and the OPTIONS
 -- menu is a trip.
-Voxel.HOTKEY_ORDER = { 0, 2, 3, 4, 5, 6, 7 }   -- OFF, 15, 35, 50, 75, 1ST, 3RD
+Voxel.HOTKEY_ORDER = { 0, 2, 3, 4, 5 }   -- OFF, 15, 35, 50, 75, 1ST, 3RD
 
 -- The rung a press moves to from `level`.
 --

@@ -1,0 +1,49 @@
+[leaf-sdl2-fullscreen] loaded enabled=1 target=960x720
+[leaf-sdl2-fullscreen] SDL_CreateWindow requested=1024x768 flags=0x22 forcing=960x720 flags=0x1023
+xkbcommon: ERROR: couldn't find a Compose file for locale "en_US.UTF-8" (mapped to "en_US.UTF-8")
+[leaf-sdl2-fullscreen] SDL_SetWindowPosition ignoring=805240832,805240832
+[leaf-sdl2-fullscreen] SDL_SetWindowFullscreen forcing flags=0x1001
+arm_release_ver: g13p0-01eac0, rk_so_ver: 10
+[info] generated data loaded (222 maps, 151 species, 165 moves)
+[info] loaded mod LEAF_VOXEL 0.1.0
+[info] game loaded
+[info] display: 960x720 units, 960x720 px, fit scale 5 px/GB px
+[info] loaded save
+[leaf-sdl2-fullscreen] SDL_SetWindowFullscreen forcing flags=0x1001
+[info] map: REDS_HOUSE_2F at (3,6)
+LEAF_BENCH start map=REDS_HOUSE_2F
+LEAF_BENCH t=5.0 fps=53.71 p50=16.66 p95=18.41 p99=46.13 max=324.60 lua_mb=17.3 mesh_draws=2 vertices=22588 map=REDS_HOUSE_2F x=48.0 y=96.0 top=nil
+LEAF_BENCH t=10.0 fps=60.03 p50=16.67 p95=17.74 p99=18.41 max=18.71 lua_mb=14.3 mesh_draws=2 vertices=22588 map=REDS_HOUSE_2F x=48.0 y=96.0 top=nil
+[warn] saved position CELADON_CITY (8,10) is not walkable; moved to (5,10)
+[info] map: CELADON_CITY at (5,10)
+LEAF_BENCH t=15.1 fps=59.36 p50=16.63 p95=17.95 p99=18.48 max=74.65 lua_mb=12.3 mesh_draws=0 vertices=0 map=CELADON_CITY x=80.0 y=160.0 top=nil
+LEAF_SLOW update 49.44
+LEAF_SLOW drawWorld 106.95
+LEAF_BENCH t=20.1 fps=54.02 p50=16.58 p95=34.47 p99=55.74 max=119.88 lua_mb=31.1 mesh_draws=28 vertices=266356 map=CELADON_CITY x=46.0 y=288.0 top=nil
+[info] map: ROUTE_16 at (39,10)
+LEAF_SLOW update 63.19
+LEAF_SLOW update 50.45
+[info] map: CELADON_CITY at (0,18)
+LEAF_SLOW drawWorld 46.10
+LEAF_BENCH t=25.1 fps=52.33 p50=17.65 p95=25.59 p99=57.32 max=73.17 lua_mb=57.4 mesh_draws=28 vertices=262360 map=CELADON_CITY x=80.0 y=289.0 top=nil
+LEAF_SLOW drawWorld 41.15
+LEAF_BENCH t=30.1 fps=42.30 p50=22.36 p95=34.52 p99=43.27 max=59.82 lua_mb=58.9 mesh_draws=74 vertices=468256 map=CELADON_CITY x=32.0 y=326.0 top=nil
+LEAF_BENCH t=35.1 fps=44.65 p50=21.20 p95=31.49 p99=39.93 max=46.47 lua_mb=79.5 mesh_draws=27 vertices=274720 map=CELADON_CITY x=112.0 y=362.0 top=nil
+LEAF_SLOW update 52.13
+LEAF_SLOW update 55.09
+LEAF_BENCH t=40.1 fps=39.50 p50=23.54 p95=34.72 p99=80.53 max=90.57 lua_mb=71.6 mesh_draws=58 vertices=413476 map=CELADON_CITY x=64.0 y=288.0 top=nil
+LEAF_BENCH t=45.2 fps=50.14 p50=19.77 p95=26.24 p99=40.01 max=45.53 lua_mb=99.6 mesh_draws=77 vertices=498520 map=CELADON_CITY x=32.0 y=361.0 top=nil
+LEAF_BENCH t=50.2 fps=49.05 p50=19.58 p95=27.75 p99=36.33 max=46.43 lua_mb=70.9 mesh_draws=22 vertices=247868 map=CELADON_CITY x=128.0 y=333.0 top=nil
+LEAF_BENCH t=55.2 fps=50.73 p50=18.29 p95=26.93 p99=29.80 max=37.59 lua_mb=83.0 mesh_draws=73 vertices=478510 map=CELADON_CITY x=35.0 y=272.0 top=nil
+LEAF_BENCH t=60.2 fps=55.15 p50=17.01 p95=24.11 p99=28.97 max=38.80 lua_mb=64.9 mesh_draws=54 vertices=395572 map=CELADON_CITY x=64.0 y=368.0 top=nil
+LEAF_BENCH t=65.2 fps=48.48 p50=20.54 p95=26.49 p99=28.91 max=38.39 lua_mb=75.0 mesh_draws=23 vertices=252344 map=CELADON_CITY x=128.0 y=284.0 top=nil
+LEAF_BENCH t=70.2 fps=52.96 p50=17.77 p95=24.04 p99=27.84 max=39.00 lua_mb=88.0 mesh_draws=75 vertices=489568 map=CELADON_CITY x=32.0 y=312.0 top=nil
+LEAF_BENCH t=75.2 fps=52.92 p50=17.35 p95=25.52 p99=29.77 max=37.79 lua_mb=67.8 mesh_draws=17 vertices=225488 map=CELADON_CITY x=132.0 y=368.0 top=nil
+LEAF_BENCH t=80.2 fps=49.45 p50=20.29 p95=25.69 p99=30.60 max=33.87 lua_mb=79.6 mesh_draws=46 vertices=359764 map=CELADON_CITY x=84.0 y=272.0 top=nil
+LEAF_BENCH t=85.3 fps=55.91 p50=16.97 p95=23.32 p99=26.98 max=31.34 lua_mb=93.7 mesh_draws=76 vertices=494044 map=CELADON_CITY x=32.0 y=358.0 top=nil
+LEAF_BENCH t=90.3 fps=50.84 p50=19.20 p95=25.92 p99=28.66 max=38.71 lua_mb=73.2 mesh_draws=15 vertices=216536 map=CELADON_CITY x=144.0 y=329.0 top=nil
+LEAF_BENCH t=95.3 fps=50.97 p50=18.17 p95=26.74 p99=29.02 max=35.51 lua_mb=85.4 mesh_draws=72 vertices=474034 map=CELADON_CITY x=36.0 y=272.0 top=nil
+LEAF_BENCH t=100.3 fps=54.66 p50=17.04 p95=22.95 p99=32.18 max=35.77 lua_mb=67.3 mesh_draws=57 vertices=409000 map=CELADON_CITY x=60.0 y=368.0 top=nil
+LEAF_BENCH t=105.3 fps=48.95 p50=20.13 p95=26.69 p99=29.79 max=34.67 lua_mb=77.9 mesh_draws=21 vertices=243392 map=CELADON_CITY x=128.0 y=291.0 top=nil
+LEAF_BENCH t=110.3 fps=53.01 p50=17.97 p95=25.78 p99=27.89 max=29.64 lua_mb=91.0 mesh_draws=71 vertices=471664 map=CELADON_CITY x=32.0 y=307.0 top=nil
+LEAF_BENCH t=115.3 fps=53.50 p50=17.36 p95=25.32 p99=28.34 max=35.37 lua_mb=71.4 mesh_draws=19 vertices=234440 map=CELADON_CITY x=124.0 y=368.0 top=nil

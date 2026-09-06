@@ -63,7 +63,7 @@ WorldCurve.setting = ModSetting.new(WorldCurve.KEY, WorldCurve.LABEL,
                                     { "OFF", "1", "2", "3" })
 
 function WorldCurve.level()
-  return WorldCurve.setting:get() or 0
+  return 0
 end
 
 function WorldCurve.active()

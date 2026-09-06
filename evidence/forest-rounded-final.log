@@ -1,0 +1,39 @@
+[leaf-sdl2-fullscreen] loaded enabled=1 target=960x720
+[leaf-sdl2-fullscreen] SDL_CreateWindow requested=1024x768 flags=0x22 forcing=960x720 flags=0x1023
+xkbcommon: ERROR: couldn't find a Compose file for locale "en_US.UTF-8" (mapped to "en_US.UTF-8")
+[leaf-sdl2-fullscreen] SDL_SetWindowPosition ignoring=805240832,805240832
+[leaf-sdl2-fullscreen] SDL_SetWindowFullscreen forcing flags=0x1001
+arm_release_ver: g13p0-01eac0, rk_so_ver: 10
+[info] generated data loaded (222 maps, 151 species, 165 moves)
+[info] loaded mod LEAF_VOXEL 0.1.0
+[info] game loaded
+[info] display: 960x720 units, 960x720 px, fit scale 5 px/GB px
+[info] loaded save
+[leaf-sdl2-fullscreen] SDL_SetWindowFullscreen forcing flags=0x1001
+[info] map: REDS_HOUSE_2F at (3,6)
+LEAF_BENCH start map=REDS_HOUSE_2F
+LEAF_BENCH t=5.0 fps=53.72 p50=16.67 p95=18.26 p99=43.51 max=350.25 lua_mb=17.0 mesh_draws=2 vertices=22588 map=REDS_HOUSE_2F x=48.0 y=96.0 top=nil
+LEAF_BENCH t=10.0 fps=60.04 p50=16.65 p95=17.70 p99=18.58 max=21.81 lua_mb=14.5 mesh_draws=2 vertices=22588 map=REDS_HOUSE_2F x=48.0 y=96.0 top=nil
+[info] map: VIRIDIAN_FOREST at (8,10)
+LEAF_BENCH t=15.1 fps=59.42 p50=16.64 p95=17.91 p99=18.62 max=68.86 lua_mb=12.3 mesh_draws=0 vertices=0 map=VIRIDIAN_FOREST x=128.0 y=160.0 top=nil
+LEAF_SLOW update 166.65
+LEAF_BENCH t=20.1 fps=53.07 p50=16.96 p95=24.71 p99=54.76 max=172.02 lua_mb=19.3 mesh_draws=64 vertices=440740 map=VIRIDIAN_FOREST x=96.0 y=272.0 top=nil
+LEAF_BENCH t=25.1 fps=54.14 p50=18.17 p95=25.07 p99=26.60 max=27.27 lua_mb=22.5 mesh_draws=54 vertices=420620 map=VIRIDIAN_FOREST x=128.0 y=164.0 top=nil
+LEAF_BENCH t=30.1 fps=52.34 p50=18.71 p95=25.84 p99=27.50 max=27.81 lua_mb=18.7 mesh_draws=66 vertices=434510 map=VIRIDIAN_FOREST x=96.0 y=215.0 top=nil
+LEAF_BENCH t=35.1 fps=53.43 p50=18.31 p95=25.18 p99=27.24 max=27.60 lua_mb=21.5 mesh_draws=61 vertices=433198 map=VIRIDIAN_FOREST x=128.0 y=268.0 top=nil
+LEAF_BENCH t=40.1 fps=53.47 p50=18.22 p95=24.49 p99=25.96 max=26.96 lua_mb=17.8 mesh_draws=54 vertices=420620 map=VIRIDIAN_FOREST x=128.0 y=160.0 top=nil
+LEAF_BENCH t=45.1 fps=53.53 p50=18.32 p95=24.09 p99=27.40 max=28.57 lua_mb=21.2 mesh_draws=67 vertices=432004 map=VIRIDIAN_FOREST x=96.0 y=266.0 top=nil
+LEAF_BENCH t=50.1 fps=53.54 p50=18.03 p95=24.80 p99=26.60 max=27.90 lua_mb=17.1 mesh_draws=62 vertices=454500 map=VIRIDIAN_FOREST x=128.0 y=217.0 top=nil
+LEAF_BENCH t=55.1 fps=52.87 p50=18.47 p95=25.44 p99=27.19 max=28.74 lua_mb=20.4 mesh_draws=58 vertices=398120 map=VIRIDIAN_FOREST x=97.0 y=160.0 top=nil
+LEAF_BENCH t=60.2 fps=52.87 p50=18.68 p95=26.08 p99=27.12 max=27.88 lua_mb=16.6 mesh_draws=64 vertices=440740 map=VIRIDIAN_FOREST x=96.0 y=272.0 top=nil
+LEAF_BENCH t=65.2 fps=53.63 p50=18.27 p95=25.57 p99=26.75 max=27.55 lua_mb=19.7 mesh_draws=56 vertices=425648 map=VIRIDIAN_FOREST x=128.0 y=169.0 top=nil
+LEAF_BENCH t=70.2 fps=52.37 p50=18.94 p95=25.05 p99=26.66 max=28.46 lua_mb=16.3 mesh_draws=62 vertices=408176 map=VIRIDIAN_FOREST x=96.0 y=210.0 top=nil
+LEAF_BENCH t=75.2 fps=53.53 p50=17.99 p95=25.52 p99=27.44 max=28.56 lua_mb=18.6 mesh_draws=58 vertices=425656 map=VIRIDIAN_FOREST x=127.0 y=272.0 top=nil
+LEAF_BENCH t=80.2 fps=53.66 p50=18.02 p95=24.59 p99=27.44 max=28.34 lua_mb=22.1 mesh_draws=54 vertices=420620 map=VIRIDIAN_FOREST x=128.0 y=160.0 top=nil
+LEAF_BENCH t=85.2 fps=52.85 p50=18.55 p95=23.79 p99=27.09 max=27.90 lua_mb=18.3 mesh_draws=64 vertices=424462 map=VIRIDIAN_FOREST x=96.0 y=261.0 top=nil
+LEAF_BENCH t=90.2 fps=53.57 p50=18.16 p95=25.06 p99=26.79 max=27.13 lua_mb=21.3 mesh_draws=64 vertices=459528 map=VIRIDIAN_FOREST x=128.0 y=223.0 top=nil
+LEAF_BENCH t=95.2 fps=52.74 p50=18.55 p95=25.41 p99=27.49 max=27.94 lua_mb=17.7 mesh_draws=57 vertices=395606 map=VIRIDIAN_FOREST x=103.0 y=160.0 top=nil
+LEAF_BENCH t=100.2 fps=53.56 p50=18.32 p95=23.89 p99=26.74 max=27.14 lua_mb=20.7 mesh_draws=64 vertices=440740 map=VIRIDIAN_FOREST x=96.0 y=272.0 top=nil
+LEAF_BENCH t=105.2 fps=54.32 p50=17.96 p95=24.10 p99=26.68 max=26.93 lua_mb=17.4 mesh_draws=57 vertices=428162 map=VIRIDIAN_FOREST x=128.0 y=173.0 top=nil
+LEAF_BENCH t=110.3 fps=52.33 p50=18.68 p95=26.15 p99=27.41 max=33.34 lua_mb=20.7 mesh_draws=66 vertices=418232 map=VIRIDIAN_FOREST x=96.0 y=207.0 top=nil
+LEAF_BENCH t=115.3 fps=53.75 p50=18.01 p95=24.66 p99=26.25 max=27.01 lua_mb=16.6 mesh_draws=59 vertices=428170 map=VIRIDIAN_FOREST x=123.0 y=272.0 top=nil

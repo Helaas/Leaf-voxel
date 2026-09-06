@@ -355,6 +355,14 @@ local function authoredCompanionTags(tilesetId)
 end
 
 local function shapeFor(class, heights, authored, tileTags)
+  -- Keep rounded trees; small round props are boxes and grass stays flat.
+  if class == "grass" then
+    return {class = "grass", h = 0, art = "flat", flat = true, authored = true}
+  end
+  if class == "planter" or class == "can" then
+    return { class = "tree", h = heights[class] or 16,
+      art = "upright", flat = false, authored = true }
+  end
   local companionTags = {}
   for tag, enabled in pairs(CLASS_COMPANION_TAGS[class] or {}) do
     if enabled == true then companionTags[tag] = true end

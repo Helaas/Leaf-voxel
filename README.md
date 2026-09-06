@@ -1,166 +1,30 @@
-# Dramaless Shape 2.0
+# Leaf Voxel
 
-Dramaless Shape renders the Gen1Recomp overworld as a depth-buffered voxel
-diorama. 
-Version 2.0 strictly only provices voxel environments plus one legacy feature:
-native Gen 1 2D battle cards staged on the voxel map.
+A small MIT-licensed fork of [Dramaless Shape](https://github.com/artyrambles/DRAMALESS_SHAPE), targeting Gen1Recomp on the Miniloong Pocket 1 (RK3566, 1 GB RAM). Independent integration by [Helaas](https://github.com/Helaas).
 
-This is an experimental split release based on the Dramaless development line.
-Keep Dramaless 1.6.4 LTS archived if you want the former combined feature set.
+**Experimental.** This is an overworld renderer. Battles use Gen1Recomp's original 2D presentation. Hardware measurements and the exact tested scope are recorded in [HARDWARE.md](HARDWARE.md).
 
-## Features That Were Split From Dramaless Starting at v2.0
+The initial cut removes voxel battles, Stadium integration, the companion API, predictive area precaching, and the previous neighbourhood's mesh cache. Trees and stumps keep their rounded forms, using shared meshes and screen culling. Bins and potted plants use textured boxes; tall grass stays flat. It uses a small textured shader, and a world canvas at one third of the display dimensions. Shadows, water reflections, tilt shift, supersampling, wireframe, curvature, first/third-person movement, and window-light effects are disabled. Buildings use flat roofs and textured walls, while small furniture keeps its detailed models. Menus and dialogue remain at full resolution.
 
-Dramaless now only handles voxel terrain, buildings, overworld figures, lighting, water,
-shadows, camera modes, tilt shift, performance settings, voxel-map arena
-rendering, and its native-2D card renderer. It does not handle Stadium Pokemon
-models, replacement sprite packs, move animations, HUDs, disc stages, battle
-transitions, or VR.
+Mesh uploads use LÖVE's packed data API because Gen1Recomp's mod sandbox does not expose FFI. Outdoor buildings use direct roof and wall surfaces. The retained furniture generator yields within its inner loops to keep input responsive.
 
-[StadiumBattleFX](https://github.com/anxiousintrovert/StadiumBattleFX) 2.x
-now includes all the Stadium-related features that were removed from Dramaless. 
-When both mods are installed, Dramaless registers `DRAMALESS_SHAPE:voxel-map` 
-in the arena selector and `DRAMALESS_SHAPE:voxel-cards` in the model selector. 
-The selectors are independent, so players can pair voxel cards with a Stadium 
-arena or pair Stadium models with the voxel map.
+## Install
 
-Without StadiumBattleFX, Dramaless uses its own small standalone host for the
-`VOXEL ARENA + 2D CARDS` option. The arena remains a fully depth-buffered 3D
-voxel environment; only the Pokemon and trainer cards are 2D. It automatically
-yields when StadiumBattleFX is installed so the two don't clash.
+Requires Gen1Recomp with mod API 2 and LÖVE 11.5. Tested engine: **0.2.56**, using [Leaf-Gen1Recomp](https://github.com/Helaas/Leaf-Gen1Recomp) and Leaf's PortMaster runtime.
 
-Mixed legacy/2.0 installs are blocked by manifest ranges. Use legacy with
-legacy, or 2.x with 2.x.
+1. Build with `python3 scripts/package.py`, or use a provided ZIP.
+2. Import the ZIP through Gen1Recomp's mod manager, or extract its `LEAF_VOXEL` folder into the game's user-data `mods` directory.
+3. Disable other voxel renderers and enable **Leaf Voxel** for your cartridge.
+4. Use **VOXEL: ON** in Options. **RES: 1/3** is the starting point; 1/2 and 1/4 remain available for comparison. The frame cap belongs to Gen1Recomp.
 
-## Installation
+Installing or removing the mod does not require replacing the game archive. Keep your existing saves and imported data. A mod-change notice on loading an existing save is expected.
 
-Install the release ZIP through Gen1Recomp's mod manager or extract it as
-`mods/DRAMALESS_SHAPE`. This experimental build targets mod API 2 and declares
-its required engine range in `manifest.json`.
+No ROM, imported asset cache, save, or replacement Pokémon artwork is distributed. Players supply their own compatible game dumps.
 
-## Voxel Companion API v1
+## Development
 
-This branch exports the read-only `voxel_companion` v1 provider for Kanto First
-Person. The adapter runs inside the existing official `voxel` render pipeline.
-DRAMALESS_SHAPE keeps ownership of `drawWorld`, terrain, actors, the base
-camera, and the final scene canvas.
+- `lua tools/run_tests.lua` checks packed vertex order, upload boundaries, eviction of obsolete jobs, scenery simplification, building surfaces, shared tree meshes and frustum culling. Tests use Lua 5.3+ for `string.pack`; the mod runs under LÖVE's LuaJIT.
+- `scripts/benchmark.lua` is an engine `POKEPORT_DRIVER`. Use it only with a separate test copy of the user's data; it loads that copy and drives a repeatable route without saving. Its driver clock requires a 60 FPS cap.
+- `python3 scripts/package.py` builds a deterministic source-only ZIP and SHA-256 file.
 
-Certified extension seams are `background`, `opaque_after_terrain`, and
-`translucent_after_actors`. This host does not advertise terrain patches,
-shadow-pass extensions, or battle-pass extensions. It rejects descriptors that
-request those unsupported seams. See
-[`docs/voxel-companion-api-v1.md`](docs/voxel-companion-api-v1.md) for the
-contract, limits, ownership rules, and test commands.
-
-If the host detects the old `Ceiling.draw` KFP file-splice marker, it leaves the
-file unchanged and does not export the provider. Reinstall a clean host copy to
-use the API.
-
-## Main controls
-
-- `V`: cycle voxel camera modes (FULL remains an options-menu preset).
-- `G`: toggle voxel grid lines.
-- `T`: cycle tilt shift.
-- `C`: cycle world curvature.
-- `9`: cycle water rendering.
-
-First- and third-person modes retain camera-relative movement and input. The
-quality, shadow, antialiasing, water, day/night, grid, and curvature settings
-remain available. `VOXEL ARENA + 2D CARDS` is shown when StadiumBattleFX is
-absent. `BACK SPRITES` is available by default. It keeps the player's original 
-back sprite in the UI while the enemy remains staged in the arena. 
-The old multi-mode `3D-BTL` selector and all VR settings are gone.
-
-## Performance And Optimization
-Compared to the original DramaticShape, this mod strives to perform well
-on most devices. For this reason, options were added (and more are being
-worked on) that allow the player to lower the render resolution or render
-distance.
-These features are still being worked on and will improve in the future.
-
-## Diagnostics
-
-The Logging options is currently disabled to conform with changes to the
-modding API. It will be restored later.
-
-## License and attribution
-
-Code is distributed under the MIT License beginning with 2.0. See
-`LICENSE`. This fork contains fixes and additions by Stahltier (artyrambles)
-based on DramaticShapeVoxelMod 1.6.2, and incorporates MIT-licensed work from
-Terrarium as well as Battle Art. The removed OpenXR loader is not distributed in 2.0.
-
-Pokemon and Nintendo trademarks belong to their respective owners. This is an
-unofficial fan-made mod and includes no ROM data.
-
-> ### This is a standalone fork, not the original or main version of the Dramatic Shape Voxel mod!
-
-> **The original and main version of the mod was here, but may currently be defunct:**
-> https://github.com/DramaticShape/DramaticShapeVoxelMod
->
-> `DRAMALESS SHAPE` is not associated with or endorsed by the original DramaticShape mod
-> and its creator. I made this because I was a fan of the original mod's vision and
-> wanted to help improve it according to my own ideas and suggestions from the community.
-
-> DramaticShapeVoxelMod's v1.6.1, which this mod is based on, was released under the MIT License and allows anyone to modify and redistribute it. No part of this mod was stolen
-> or created with malicious intentions. 
->All contributions from other creators besides myself have been credited to the
-> best of my knowledge.
-
->I have nothing but respect for my fellow modders. This mod wouldn't have been possible
->without the help and contributions from others.
-
-# AI Usage Disclosure
-## What is NOT made with AI or AI assistance
-
-***Any additions and edits that I (Stahltier) made to the Dramaless Shape fork myself***
-***were NOT created or in any way touched by AI.***
-**My code is all 100% organic home-grown human-made spaghetti, baby!**
-
-However I acknowledge that many passionate people do not have the skills
-yet that would be needed to tackle a project of this size, and I am grateful
-for anyone who is helping contribute to it in any way they can.
-
-I am not rejecting or disparaging creators who use AI in some way to
-contribute to this project. But as everyone should be acutely aware,
-AI can make mistakes that are very hard to catch if the person using it
-cannot verify themselves what their AI is doing.
-
-That is why I am making extra sure as the current maintainer of this mod that
-any code that is contributed is at least looked over once and I test new releases
-before publishing them to make sure nothing slipped by. It is very likely that
-the entire foundation the code stands on was built by AI, which makes it extra
-difficult to work with.
-
-There can be hundreds of files with thousands of lines to review especially when
-it comes to extensive changes for an update. That is why I will always prefer
-human-written and human-documented code.
-
-## Made with AI assistance (Terrarium, Battle Arts, StadiumBattleFX)
-
-**Large parts of the mod's current code were written with the help of AI coding
-assistants** (Anthropic's Claude, among others).
-
-What that means in practice:
-
-- The code was **directed, tested and accepted by humans**. Features
-  were specified, measured, and rejected when the measurement did not support
-  them. It is not generated and dumped.
-- Much of it is **verified by probes rather than by eye.** The `tests/`
-  directory holds twenty self-contained probes that drive the real game
-  headless and write numbers to a log â€” shadow lengths, palette ramps, pixel
-  classifications, frame-time medians. Where this README claims a number, a
-  probe produced it.
-- It carries the usual caveat all the same: **read it before you trust it.**
-  AI-assisted code can be confidently wrong, and some of this is in the render
-  path of a program you are running on your own machine.
-
-### Contributions of and containing AI-generated Code
-I will approve contributions by creators who use AI, but it may take longer
-because of the quality and responsibilty standards I hold the mods I release
-to the public to.
-I am only human, and it is very easy to miss problems with AI-generated code
-as it tends to be very convoluted and hard to read for a human.
-
-If I become aware of faulty AI-contributed code, I reserve the right to roll
-back the mod version, remove contributions, or even refuse further contributions 
-from the same creator (if it's really severe).
+Forked from upstream commit `97ca3e1` (2.0.4 development line). The MIT license and upstream attribution are retained. See [CREDITS.md](CREDITS.md) and the inherited [CHANGELOG.md](CHANGELOG.md) for the original work.

@@ -17,6 +17,7 @@ local Voxel3D = V.require("Voxel3D")
 local ShadowMap = V.require("ShadowMap")
 local Shadows = V.require("Shadows")
 local ChunkMesher = V.require("ChunkMesher")
+local Trees = V.require("TreeMeshes")
 local SpriteBillboards = V.require("SpriteBillboards")
 local TileShape = V.require("TileShape")
 local TerrainAtlas = V.require("TerrainAtlas")
@@ -54,7 +55,7 @@ VoxelScene.silhouetteSetting = ModSetting.new(
 )
 
 function VoxelScene.silhouettesEnabled()
-  return VoxelScene.silhouetteSetting:get() and true or false
+  return false
 end
 
 -- What the active display mode actually paints with.
@@ -223,7 +224,7 @@ end
 local function skyFor(map)
   local sky = VoxelScene.skyColor(map, skyStrength(Voxel.angle))
   if not sky then return nil end
-  return Sky.dress(sky)
+  return sky
 end
 
 VoxelScene._skyFor = skyFor           -- named for the suite
@@ -1125,6 +1126,10 @@ function VoxelScene.render(state, w, h, vw, vh, paletteFor)
     pcall(companion.dispatchRenderPhase, companion, "background")
   end
   Voxel3D.draw3DTerrain(terrain, atlasFor(state.map), state.neighbors, nbMesh, withinRenderDistance)
+  Trees.draw(ChunkMesher.trees(state.map, false), atlasFor(state.map))
+  for _, nb in ipairs(state.neighbors or {}) do
+    Trees.draw(ChunkMesher.trees(nb.map, true), atlasFor(nb.map), nb.ox, nb.oy)
+  end
 
   -- Without a shadow map (headless, or a driver that could not make the
   -- canvas) the old flat decals stand in: ground-only, characters only,

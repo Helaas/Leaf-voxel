@@ -55,13 +55,8 @@ local Structures = V.require("Structures")
 local TileShape = V.require("TileShape")
 local Voxel3D = V.require("Voxel3D")
 local Budget = V.require("BuildBudget")
-local MeshDisk = V.require("VoxelMeshDisk")
-
-local ffi = nil
-do
-  local ok, mod = pcall(require, "ffi")
-  if ok then ffi = mod end
-end
+local Trees = V.require("TreeMeshes")
+local PackedMesh = V.require("PackedMesh")
 
 local ChunkMesher = {}
 
@@ -129,14 +124,8 @@ end
 
 -- ------------------------------------------------------------ vertex sinks
 
--- A sink accepts quads (4 corners, 4 uv pairs, flat or per-corner shade)
--- and finishes into a drawable mesh. The TABLE sink reproduces the
--- historical pure-Lua output -- geometry() returns its arrays for the
--- headless suite. The FFI sink packs the same six floats per vertex
--- straight into one growing native buffer, unindexed (v1 v2 v3 v1 v3 v4),
--- skipping ~a million short-lived Lua tables per route and LOVE's slow
--- table-by-table vertex upload.
-
+-- The table sink is only for headless geometry checks. Runtime uploads use
+-- PackedMesh, which works within the mod sandbox without FFI.
 local function newTableSink()
   local verts, indices, quads = {}, {}, 0
   return {
@@ -159,130 +148,13 @@ local function newTableSink()
   }
 end
 
-local TRI_ORDER = { 1, 2, 3, 1, 3, 4 }
-
-local function newFfiSink()
-  local cap = 4096 * 6
-  local buf = ffi.new("float[?]", cap * 6)
-  local n = 0
-  local sink
-  sink = {
-    push = function(c, uv, shade)
-      if n + 6 > cap then
-        local grown = ffi.new("float[?]", cap * 2 * 6)
-        ffi.copy(grown, buf, n * 6 * 4)
-        buf, cap = grown, cap * 2
-      end
-      local flat = type(shade) ~= "table"
-      local base = n * 6
-      for k = 1, 6 do
-        local i = TRI_ORDER[k]
-        local cc, t = c[i], uv[i]
-        buf[base] = cc[1]
-        buf[base + 1] = cc[2]
-        buf[base + 2] = cc[3]
-        buf[base + 3] = t[1]
-        buf[base + 4] = t[2]
-        buf[base + 5] = flat and shade or shade[i]
-        base = base + 6
-      end
-      n = n + 6
-    end,
-    finish = function()
-      if n == 0 then return nil end
-      -- upload in slices with budget ticks between: a route-sized mesh
-      -- is ~10-20MB and one atomic setVertices was the last remaining
-      -- frame spike. The mesh is not cached (so never drawn) until the
-      -- whole upload lands, and LuaJIT yields fine across pcall.
-      local ok, mesh = pcall(function()
-        local m = love.graphics.newMesh(Voxel3D.FORMAT, n,
-                                        "triangles", "static")
-        local CHUNK = 65536              -- vertices per slice (~1.5MB)
-        local i = 0
-        while i < n do
-          local count = math.min(CHUNK, n - i)
-          local bytes = count * 6 * 4
-          local data = love.data.newByteData(bytes)
-          ffi.copy(data:getFFIPointer(), buf + i * 6, bytes)
-          m:setVertices(data, i + 1)
-          data:release()
-          i = i + count
-          Budget.check()
-        end
-        return m
-      end)
-      return ok and mesh or nil
-    end,
-    raw = function()
-      return { ptr = buf, n = n }
-    end,
-  }
-  return sink
-end
-
 local function newSink()
-  if ffi and love and love.data and love.data.newByteData
-     and love.graphics and love.graphics.newMesh then
-    return newFfiSink()
+  if love and love.data and love.data.pack and love.graphics and love.graphics.newMesh then
+    return PackedMesh.new()
   end
   return newTableSink()
 end
 
--- Upload one cached/fresh raw stream through the same sliced path used by the
--- FFI sink. Cached records point into an immutable Lua string; fresh records
--- own an FFI buffer. Both remain alive through this call.
-local function meshFromRaw(record)
-  if not (record and record.n and record.n > 0 and ffi) then return nil end
-  local bytes = record.ptr and ffi.cast("const uint8_t*", record.ptr) or nil
-  if not bytes and record.blob then
-    bytes = ffi.cast("const uint8_t*", record.blob) + (record.offset or 0)
-  end
-  if not bytes then return nil end
-  local ok, mesh = pcall(function()
-    local result = love.graphics.newMesh(Voxel3D.FORMAT, record.n,
-                                         "triangles", "static")
-    local chunk, i = 65536, 0
-    while i < record.n do
-      local count = math.min(chunk, record.n - i)
-      local byteCount = count * 6 * 4
-      local data = love.data.newByteData(byteCount)
-      ffi.copy(data:getFFIPointer(), bytes + i * 6 * 4, byteCount)
-      result:setVertices(data, i + 1)
-      data:release()
-      i = i + count
-      Budget.check()
-    end
-    return result
-  end)
-  return ok and mesh or nil
-end
-
--- -------------------------------------------------------------- geometry
-
--- Emit the raw geometry for `map` into `sink`. `bodyOnly` skips the
--- border ring -- the shape the 2D path's drawMapOnly has always had: a
--- neighbour map contributes its body, and only the CURRENT map supplies
--- the ring around the view.
---
--- `masks` (full variant only) lists rectangles, in this map's world
--- pixels, where connected neighbour BODIES sit: ring geometry inside them
--- is suppressed. The 2D renderer never needed this because it painted
--- neighbour bodies OVER the ring; with a depth buffer the ring's standing
--- trees would rise straight through the neighbour's flat ground -- cross
--- into Route 1 and a wall of border trees sprouts over Pallet.
---
--- Kept free of any GPU call so it can be exercised headless -- the
--- geometry is the part with the interesting invariants, and a suite that
--- needed a real GL context to check them would never run in CI.
--- `waterSink`, when given, takes the WATER SURFACE quads instead of the
--- main sink -- the one class in this world that is drawn as its own pass
--- (see Water: a mirror cannot be drawn until what it reflects exists).
--- Nothing else moves: the quads are the same quads, emitted by the same
--- corner and uv arithmetic at the same recessed height, and the shoreline
--- faces around them still belong to the GROUND that exposes them.
---
--- Omitted, water stays in the terrain mesh exactly as it always did, which
--- is what the headless geometry() below and the sun's own pass both want.
 local function runGeometry(map, bodyOnly, masks, sink, waterSink)
   local push = sink.push
   local waterPush = waterSink and waterSink.push or nil
@@ -772,63 +644,7 @@ local function runGeometry(map, bodyOnly, masks, sink, waterSink)
     end
   end
 
-  -- true when the rect sits entirely inside one neighbour-body rect
-  local function containedInMask(x0, z0, x1, z1)
-    if not masks then return false end
-    for _, mk in ipairs(masks) do
-      if x0 >= mk[1] and x1 <= mk[3] and z0 >= mk[2] and z1 <= mk[4] then
-        return true
-      end
-    end
-    return false
-  end
 
-  -- round-tree stamps: the shared hull template translated per cell,
-  -- through reusable scratch corners so expansion allocates nothing.
-  -- A hull spans at most its own footprint -- one 16px cell unless the
-  -- stamp carries a wider radius (the 2x2-cell canopy groups) -- so one
-  -- rect test usually answers for the whole stamp: strictly interior
-  -- stamps keep every quad, ring stamps buried under a neighbour body
-  -- (or, body-only, ring stamps full stop) skip without touching their
-  -- quads. Only stamps crossing a boundary walk quad by quad.
-  local sc = { { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 } }
-  for _, st in ipairs(S.roundStamps or {}) do
-    local mx, mz = st.mx, st.mz
-    local sr = st.r or 8
-    local sx0, sz0, sx1, sz1 = mx - sr, mz - sr, mx + sr, mz + sr
-    local interior = sx0 > 0 and sx1 < bw and sz0 > 0 and sz1 < bh
-    local overBody = sx1 > 0 and sx0 < bw and sz1 > 0 and sz0 < bh
-    local keepAll, skipAll
-    if bodyOnly then
-      keepAll = interior
-      skipAll = not overBody
-    else
-      keepAll = interior or not maskedClosed(sx0, sz0, sx1, sz1)
-      skipAll = not overBody and containedInMask(sx0, sz0, sx1, sz1)
-    end
-    if not skipAll then
-      for _, q in ipairs(st.quads) do
-        Budget.tick()
-        for i = 1, 4 do
-          local c, s2 = q[i], sc[i]
-          s2[1] = c[1] + mx
-          s2[2] = c[2]
-          s2[3] = c[3] + mz
-        end
-        local ok = keepAll
-        if not ok then
-          local x0 = math.min(sc[1][1], sc[2][1], sc[3][1], sc[4][1])
-          local x1 = math.max(sc[1][1], sc[2][1], sc[3][1], sc[4][1])
-          local z0 = math.min(sc[1][3], sc[2][3], sc[3][3], sc[4][3])
-          local z1 = math.max(sc[1][3], sc[2][3], sc[3][3], sc[4][3])
-          ok = keepQuad(x0, z0, x1, z1)
-        end
-        if ok then
-          push(sc, quadUV(q), groundShades(sc, q.shade))
-        end
-      end
-    end
-  end
 end
 
 -- The raw geometry for `map`: (vertex list, triangle index list, quad
@@ -865,83 +681,14 @@ function ChunkMesher.build(map, bodyOnly, masks, split)
 end
 
 local function quadsMesh(quads)
-  if #quads == 0 then return nil end
-  local verts, indices, n = {}, {}, 0
+  local sink = newSink()
   for _, q in ipairs(quads) do
-    for i = 1, 4 do
-      local c = q[i]
-      local uv = q.uv and q.uv[i] or { q.u, q.v }
-      verts[#verts + 1] = { c[1], c[2], c[3], uv[1], uv[2], q.shade }
-    end
-    Voxel3D.pushQuad(indices, n)
-    n = n + 1
+    local uv = q.uv or {{q.u, q.v}, {q.u, q.v}, {q.u, q.v}, {q.u, q.v}}
+    sink.push(q, uv, q.shade)
   end
-  return Voxel3D.newMesh(verts, indices)
+  return sink.finish()
 end
 
--- Flatten auxiliary quads into the same unindexed six-float stream terrain
--- uses. This path is selected only when persistent caching is available; the
--- historical table builder remains the headless/non-FFI fallback.
-local function rawQuads(quads)
-  local n = #(quads or {}) * 6
-  if n == 0 then return { n = 0 } end
-  local buf = ffi.new("float[?]", n * 6)
-  local at = 0
-  for _, q in ipairs(quads) do
-    for k = 1, 6 do
-      local i = TRI_ORDER[k]
-      local c = q[i]
-      local uv = q.uv and q.uv[i] or { q.u, q.v }
-      buf[at], buf[at + 1], buf[at + 2] = c[1], c[2], c[3]
-      buf[at + 3], buf[at + 4], buf[at + 5] = uv[1], uv[2], q.shade
-      at = at + 6
-    end
-    Budget.tick()
-  end
-  return { ptr = buf, n = n }
-end
-
-local function buildRawAux(map)
-  local structures = Structures.forMap(map)
-  local aux = {
-    grass = rawQuads(structures.grassQuads),
-    flowers = rawQuads(structures.flowerQuads),
-    figures = {},
-  }
-  for _, figure in ipairs(structures.figures or {}) do
-    local raw = rawQuads(figure.quads)
-    if raw.n > 0 then
-      local width = 0
-      for _, q in ipairs(figure.quads) do
-        for i = 1, 4 do
-          local x = q[i] and q[i][1]
-          if x and x > width then width = x end
-        end
-      end
-      raw.wx, raw.wz, raw.y, raw.w = figure.wx, figure.wz, figure.y, width
-      aux.figures[#aux.figures + 1] = raw
-    end
-  end
-  return aux
-end
-
-local function meshesFromRawAux(aux)
-  local figures = {}
-  for _, raw in ipairs(aux.figures or {}) do
-    local mesh = meshFromRaw(raw)
-    if mesh then
-      figures[#figures + 1] = {
-        mesh = mesh, wx = raw.wx, wz = raw.wz, y = raw.y, w = raw.w,
-      }
-    end
-  end
-  return meshFromRaw(aux.grass), meshFromRaw(aux.flowers), figures
-end
-
--- The tall-grass rows as their own mesh: VoxelScene draws it AFTER the
--- characters so the southern row of a grass cell still overdraws a
--- walker's feet (characters stamp over terrain, Gen 1 style, so ordinary
--- terrain could never do this).
 local function buildGrassMesh(map)
   return quadsMesh(Structures.forMap(map).grassQuads)
 end
@@ -1022,6 +769,7 @@ local function waterSlot(slot)
 end
 
 local function releaseEntry(c)
+  c.fullTrees, c.bodyTrees = nil, nil
   for _, slot in ipairs({ "full", "body", "fullWater", "bodyWater",
                           "grass", "flowers" }) do
     local mesh = c[slot]
@@ -1074,26 +822,9 @@ local function runJob(job)
   if c.grass == nil or c.flowers == nil or c.figures == nil
      or (c.stale and c.stale.aux) then
     local grass, flowers, figures
-    if MeshDisk.available() then
-      local aux = MeshDisk.loadAux(map)
-      if not aux then
-        aux = buildRawAux(map)
-        if not current() then return end
-        MeshDisk.saveAux(map, aux)
-        if not current() then
-          MeshDisk.invalidate(job.id)
-          return
-        end
-      end
-      grass, flowers, figures = meshesFromRawAux(aux)
-    else
-      local okG, builtGrass = pcall(buildGrassMesh, map)
-      local okF, builtFlowers = pcall(buildFlowerMesh, map)
-      local okX, builtFigures = pcall(buildFigureMeshes, map)
-      grass = (okG and builtGrass) or false
-      flowers = (okF and builtFlowers) or false
-      figures = (okX and builtFigures) or false
-    end
+    grass = buildGrassMesh(map)
+    flowers = buildFlowerMesh(map)
+    figures = buildFigureMeshes(map)
     if not current() then
       if grass and grass.release then pcall(grass.release, grass) end
       if flowers and flowers.release then pcall(flowers.release, flowers) end
@@ -1107,32 +838,16 @@ local function runJob(job)
     if c.stale then c.stale.aux = nil end
   end
 
-  local mesh, water
-  local cached = MeshDisk.loadTerrain(map, job.slot, job.masks)
-  if cached then
-    mesh = meshFromRaw(cached.terrain)
-    water = meshFromRaw(cached.water)
-  else
-    local sink, waterSink = newSink(), newSink()
-    runGeometry(map, job.slot == "body", job.masks, sink, waterSink)
-    local terrainRaw = sink.raw and sink.raw() or nil
-    local waterRaw = waterSink.raw and waterSink.raw() or nil
-    mesh, water = sink.finish(), waterSink.finish()
-    if not current() then
-      if mesh and mesh.release then pcall(mesh.release, mesh) end
-      if water and water.release then pcall(water.release, water) end
-      return
-    end
-    if terrainRaw and waterRaw then
-      MeshDisk.saveTerrain(map, job.slot, job.masks, terrainRaw, waterRaw)
-    end
-  end
+  local sink, waterSink = newSink(), newSink()
+  runGeometry(map, job.slot == "body", job.masks, sink, waterSink)
+  local trees = Trees.build(map, job.slot == "body", job.masks)
+  local mesh, water = sink.finish(), waterSink.finish()
   if not current() then
-    MeshDisk.invalidate(job.id)
-    if mesh and mesh.release then pcall(mesh.release, mesh) end
-    if water and water.release then pcall(water.release, water) end
+    if mesh then mesh:release() end
+    if water then water:release() end
     return
   end
+  c[job.slot .. "Trees"] = trees
   swapSlot(c, job.slot, mesh or false)
   swapSlot(c, waterSlot(job.slot), water or false)
   if c.stale then
@@ -1194,9 +909,9 @@ end
 -- popping in one frame later. `covered` says the world pass is hidden
 -- this frame (a warp's fade, a menu): nothing visible can hitch, so the
 -- slice opens up and a door fade swallows most of a destination build.
-local URGENT_SLICE = 0.012
+local URGENT_SLICE = 0.006
 local IDLE_SLICE = 0.005
-local COVERED_SLICE = 0.030
+local COVERED_SLICE = 0.010
 
 function ChunkMesher.pump(covered)
   if #jobs == 0 then return end
@@ -1295,6 +1010,11 @@ function ChunkMesher.pair(map, bodyOnly)
   return c[slot] or nil, c[waterSlot(slot)] or nil
 end
 
+function ChunkMesher.trees(map, bodyOnly)
+  local c = cache[map.id]
+  return c and c[bodyOnly and "bodyTrees" or "fullTrees"] or {}
+end
+
 function ChunkMesher.grass(map)
   local c = cache[map.id]
   return c and c.grass or nil
@@ -1320,7 +1040,6 @@ end
 -- to the flat 2D path, a whole-world blink for a one-block edit.
 function ChunkMesher.refresh(mapId)
   if not mapId then return ChunkMesher.invalidate() end
-  MeshDisk.invalidate(mapId)
   local c = cache[mapId]
   -- nothing drawable cached: the plain drop costs nothing visible
   if not (c and (c.full or c.body)) then
@@ -1348,16 +1067,9 @@ end
 -- rendered neighbours, so memory stays bounded by what is on or near the
 -- screen instead of growing with every area ever visited.
 --
--- The PREVIOUS live set is retained too: warping into a building
--- collapses the set to one small interior, and evicting the town at the
--- door means rebuilding the whole neighbourhood on the way out -- a
--- flat-world flash after every house. One set of history makes the
--- round trip free while staying bounded at two neighbourhoods.
-local prevLive = {}
-
 function ChunkMesher.setLive(live)
   for id, c in pairs(cache) do
-    if not live[id] and not prevLive[id] then
+    if not live[id] then
       releaseEntry(c)
       cache[id] = nil
       gen[id] = (gen[id] or 0) + 1
@@ -1366,12 +1078,11 @@ function ChunkMesher.setLive(live)
   end
   for i = #jobs, 1, -1 do
     local job = jobs[i]
-    if not live[job.id] and not prevLive[job.id] then
+    if not live[job.id] then
       jobIndex[jobKey(job.id, job.slot)] = nil
       table.remove(jobs, i)
     end
   end
-  prevLive = live
 end
 
 -- Drop one map's mesh (Cut swapped a block) or all of them (hot reload).
@@ -1386,6 +1097,7 @@ function ChunkMesher.invalidate(mapId)
     cache[mapId] = nil
     gen[mapId] = (gen[mapId] or 0) + 1
   else
+    Trees.invalidate()
     for _, c in pairs(cache) do releaseEntry(c) end
     cache = {}
     for id in pairs(gen) do gen[id] = gen[id] + 1 end

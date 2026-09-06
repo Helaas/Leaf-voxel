@@ -107,7 +107,7 @@ end
 
 -- Whether the reflective pass should run at all (either rung above OFF).
 function Water.enabled()
-  return Water.level() > 0
+  return false
 end
 
 -- ------- the look, in constants

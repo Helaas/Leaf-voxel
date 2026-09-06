@@ -1,5 +1,8 @@
 ## Credits
 
+- **[Stahltier (artyrambles)](https://github.com/artyrambles/DRAMALESS_SHAPE)** and contributors: Dramaless Shape, the upstream for this fork.
+- **[Helaas](https://github.com/Helaas)**: MLP1 reduction, profiling, and integration in Leaf Voxel. These changes were made with Codex assistance.
+
 - **[Dramatic Shape](https://github.com/DramaticShape/DramaticShapeVoxelMod)**
   The voxel mod this is built on. The diorama, the battles and the shape of
   the whole thing are his.

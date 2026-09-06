@@ -62,7 +62,7 @@ VoxelGrid.setting = ModSetting.new(VoxelGrid.KEY, VoxelGrid.LABEL,
                                    { false, true }, { "OFF", "ON" })
 
 function VoxelGrid.enabled()
-  return VoxelGrid.setting:get() and true or false
+  return false
 end
 
 function VoxelGrid.set(enabled, game)
